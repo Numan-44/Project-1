@@ -1,0 +1,20 @@
+# Flask framework
+Flask==2.3.3
+flask-cors==6.0.0
+
+# Data processing
+pandas==2.0.3
+numpy==1.22.0
+
+# Plotting and visualization
+matplotlib==3.7.2
+seaborn==0.12.2
+
+# File handling
+Werkzeug==2.3.7
+
+# Optional: For better CSV handling
+openpyxl==3.1.2
+
+# Optional: For JSON handling (usually included with Flask)
+Jinja2==3.1.2
