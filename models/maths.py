@@ -1,5 +1,4 @@
 import numpy as np
-import plotly.graph_objs as go
 
 class KMeans:
     """Simple K-Means clustering implementation (loop-based, with animation history)."""
@@ -103,42 +102,3 @@ def calculate_elbow_data(X, max_k=10):
     return k_values, sse_values
 
 
-def create_animation(kmeans, X):
-    frames = []
-    for i, step in enumerate(kmeans.iteration_history_):
-        frame = go.Frame(
-            data=[
-                go.Scatter(
-                    x=X[:,0], y=X[:,1],
-                    mode="markers",
-                    marker=dict(color=step["labels"], colorscale="Viridis"),
-                    name="Points"
-                ),
-                go.Scatter(
-                    x=step["centroids"][:,0],
-                    y=step["centroids"][:,1],
-                    mode="markers",
-                    marker=dict(color="red", size=15, symbol="x"),
-                    name="Centroids"
-                )
-            ],
-            name=str(i)
-        )
-        frames.append(frame)
-
-    fig = go.Figure(
-        data=frames[0].data,
-        layout=go.Layout(
-            updatemenus=[dict(
-                type="buttons",
-                showactive=False,
-                buttons=[dict(
-                    label="Play",
-                    method="animate",
-                    args=[None, {"frame": {"duration": 1000, "redraw": True}}]
-                )]
-            )]
-        ),
-        frames=frames
-    )
-    return fig
