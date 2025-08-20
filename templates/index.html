@@ -1,10 +1,158 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">K-Means Clustering Tool</h2>
 
-</body>
-</html>
+    <!-- File Upload -->
+    <div class="card p-3 mb-3">
+        <h5>Upload CSV</h5>
+        <form id="uploadForm">
+            <input type="file" id="fileInput" accept=".csv" class="form-control mb-2" required>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+        <div id="uploadMsg" class="mt-2 text-success"></div>
+    </div>
+
+    <!-- Column Selection -->
+    <div class="card p-3 mb-3" id="columnCard" style="display:none;">
+        <h5>Select Columns</h5>
+        <label>X Column:</label>
+        <select id="xColumn" class="form-select mb-2"></select>
+        <label>Y Column:</label>
+        <select id="yColumn" class="form-select mb-2"></select>
+        <label>K (1–10):</label>
+        <input type="number" id="kValue" class="form-control mb-2" value="3" min="1" max="10">
+        <button class="btn btn-success" onclick="runClustering()">Run Clustering</button>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsCard" class="card p-3 mb-3" style="display:none;">
+        <h5>Results</h5>
+        <p><strong>Centroids:</strong></p>
+        <pre id="centroids"></pre>
+        <p><strong>SSE:</strong> <span id="sse"></span></p>
+
+        <div>
+            <h6>Cluster Plot (Animation)</h6>
+            <canvas id="clusterPlot"></canvas>
+            <button id="playAnim" class="btn btn-outline-primary mt-2">Play Animation</button>
+        </div>
+        <div class="mt-4">
+            <h6>Elbow Method</h6>
+            <canvas id="elbowPlot"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let clusterChart, elbowChart;
+let iterations = [];   // store steps from backend
+let animIndex = 0;
+let animTimer = null;
+
+document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    let file = document.getElementById("fileInput").files[0];
+    if (!file) return;
+
+    let formData = new FormData();
+    formData.append("file", file);
+
+    let res = await fetch("/upload", { method: "POST", body: formData });
+    let data = await res.json();
+
+    if (res.ok) {
+        document.getElementById("uploadMsg").innerText = data.message;
+        let xSel = document.getElementById("xColumn");
+        let ySel = document.getElementById("yColumn");
+        xSel.innerHTML = ""; ySel.innerHTML = "";
+        data.columns.forEach(col => {
+            xSel.innerHTML += `<option value="${col}">${col}</option>`;
+            ySel.innerHTML += `<option value="${col}">${col}</option>`;
+        });
+        document.getElementById("columnCard").style.display = "block";
+    } else {
+        alert(data.error);
+    }
+});
+
+async function runClustering() {
+    let x = document.getElementById("xColumn").value;
+    let y = document.getElementById("yColumn").value;
+    let k = parseInt(document.getElementById("kValue").value);
+
+    let res = await fetch("/cluster", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ x_column: x, y_column: y, k: k })
+    });
+    let data = await res.json();
+
+    if (res.ok) {
+        document.getElementById("centroids").innerText = JSON.stringify(data.centroids, null, 2);
+        document.getElementById("sse").innerText = data.sse;
+
+        // Now fetch plots (including animation data)
+        let plotRes = await fetch("/plots");
+        let plotData = await plotRes.json();
+        if (plotRes.ok) {
+            iterations = plotData.iterations || [];
+            showClusterPlot(iterations.length ? iterations[iterations.length-1].points : [], 
+                            iterations.length ? iterations[iterations.length-1].centroids : []);
+            showElbowPlot(plotData.elbow.k_values, plotData.elbow.sse_values);
+            document.getElementById("resultsCard").style.display = "block";
+        }
+    } else {
+        alert(data.error);
+    }
+}
+
+function showClusterPlot(points, centroids) {
+    let ctx = document.getElementById("clusterPlot").getContext("2d");
+    if (clusterChart) clusterChart.destroy();
+    let datasets = [];
+    let colors = ["red","blue","green","purple","orange","brown","pink","cyan","magenta","yellow"];
+    let grouped = {};
+    points.forEach(p => {
+        if (!grouped[p.cluster]) grouped[p.cluster] = [];
+        grouped[p.cluster].push({x: p.x, y: p.y});
+    });
+    Object.keys(grouped).forEach(c => {
+        datasets.push({ label: "Cluster " + c, data: grouped[c], pointRadius: 5, backgroundColor: colors[c % colors.length] });
+    });
+    if (centroids.length) {
+        datasets.push({ label: "Centroids", data: centroids.map(c => ({x: c[0], y: c[1]})), pointRadius: 8, backgroundColor: "black" });
+    }
+    clusterChart = new Chart(ctx, { type: "scatter", data: { datasets } });
+}
+
+function showElbowPlot(kVals, sseVals) {
+    let ctx = document.getElementById("elbowPlot").getContext("2d");
+    if (elbowChart) elbowChart.destroy();
+    elbowChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: kVals,
+            datasets: [{ label: "SSE", data: sseVals, borderColor: "blue", fill: false }]
+        }
+    });
+}
+
+// Animation play button
+document.getElementById("playAnim").addEventListener("click", () => {
+    if (!iterations.length) return;
+    if (animTimer) { clearInterval(animTimer); animTimer = null; animIndex = 0; }
+    animIndex = 0;
+    animTimer = setInterval(() => {
+        showClusterPlot(iterations[animIndex].points, iterations[animIndex].centroids);
+        animIndex++;
+        if (animIndex >= iterations.length) {
+            clearInterval(animTimer);
+            animTimer = null;
+        }
+    }, 1000); // 1 second per step
+});
+</script>
+{% endblock %}

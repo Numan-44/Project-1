@@ -1,8 +1,8 @@
 import numpy as np
-
+import plotly.graph_objs as go
 
 class KMeans:
-    """Simple K-Means clustering implementation (loop-based)."""
+    """Simple K-Means clustering implementation (loop-based, with animation history)."""
 
     def __init__(self, k=3, max_iters=100):
         self.k = k
@@ -10,16 +10,24 @@ class KMeans:
         self.centroids_ = None
         self.labels_ = None
         self.inertia_ = None
-        self.iteration_history_ = []
+        self.iteration_history_ = []  # stores snapshots of clustering progress
 
     def fit(self, X):
-        """Run K-Means clustering."""
+        """Run K-Means clustering and record iteration history for animation."""
         X = np.array(X, dtype=float)
         n_samples = len(X)
-        #hello
+
         # STEP 1: Initialize random centroids
         random_indices = np.random.choice(n_samples, self.k, replace=False)
         self.centroids_ = X[random_indices].copy()
+
+        # Save initial state for animation
+        self.iteration_history_.append({
+         "centroids": self.centroids_.copy(),
+         "labels": self.labels_.copy() if self.labels_ is not None else []
+        })
+
+
 
         # STEP 2: Repeat until centroids don't change or max_iters reached
         for _ in range(self.max_iters):
@@ -29,7 +37,7 @@ class KMeans:
             # Calculate new centroids
             new_centroids = self._recalculate_centroids(X, labels)
 
-            # Save history for debugging/visualization
+            # Save this step for animation
             self.iteration_history_.append({
                 'centroids': new_centroids.copy(),
                 'labels': labels.copy()
@@ -41,7 +49,7 @@ class KMeans:
 
             self.centroids_ = new_centroids
 
-        # Save results
+        # Save final results
         self.labels_ = labels
         self.inertia_ = self._calculate_sse(X, labels)
 
@@ -56,7 +64,6 @@ class KMeans:
                 distance = np.linalg.norm(point - centroid)
                 point_distances.append(distance)
             distances.append(point_distances)
-
         return np.argmin(distances, axis=1)
 
     def _recalculate_centroids(self, X, labels):
@@ -67,7 +74,7 @@ class KMeans:
             if len(cluster_points) > 0:
                 new_centroid = np.mean(cluster_points, axis=0)
             else:
-                new_centroid = self.centroids_[k]
+                new_centroid = self.centroids_[k]  # keep old centroid if cluster empty
             new_centroids.append(new_centroid)
         return np.array(new_centroids)
 
@@ -96,14 +103,42 @@ def calculate_elbow_data(X, max_k=10):
     return k_values, sse_values
 
 
-# if __name__ == "__main__":
-#     data = np.array([
-#         [1, 2], [2, 1],
-#         [8, 9], [9, 8]
-#     ])
+def create_animation(kmeans, X):
+    frames = []
+    for i, step in enumerate(kmeans.iteration_history_):
+        frame = go.Frame(
+            data=[
+                go.Scatter(
+                    x=X[:,0], y=X[:,1],
+                    mode="markers",
+                    marker=dict(color=step["labels"], colorscale="Viridis"),
+                    name="Points"
+                ),
+                go.Scatter(
+                    x=step["centroids"][:,0],
+                    y=step["centroids"][:,1],
+                    mode="markers",
+                    marker=dict(color="red", size=15, symbol="x"),
+                    name="Centroids"
+                )
+            ],
+            name=str(i)
+        )
+        frames.append(frame)
 
-#     kmeans = KMeans(k=2)
-#     kmeans.fit(data)
-#     print("Centroids:", kmeans.centroids_)
-#     print("Labels:", kmeans.labels_)
-#     print("SSE:", kmeans.inertia_)
+    fig = go.Figure(
+        data=frames[0].data,
+        layout=go.Layout(
+            updatemenus=[dict(
+                type="buttons",
+                showactive=False,
+                buttons=[dict(
+                    label="Play",
+                    method="animate",
+                    args=[None, {"frame": {"duration": 1000, "redraw": True}}]
+                )]
+            )]
+        ),
+        frames=frames
+    )
+    return fig
