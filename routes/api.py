@@ -64,18 +64,21 @@ def run_clustering():
 
     data = request.get_json()
     x, y, k = data.get('x_column'), data.get('y_column'), data.get('k', 3)
+    init_method = data.get('init', 'random')  # Get initialization method
 
     if not x or not y or x not in uploaded_data['valid_columns'] or y not in uploaded_data['valid_columns']:
         return jsonify({'error': 'Invalid columns'}), 400
     if k < 1 or k > 10:
         return jsonify({'error': 'k must be between 1 and 10'}), 400
+    if init_method not in ['random', 'kmeans++']:
+        return jsonify({'error': 'init must be random or kmeans++'}), 400
 
     df = uploaded_data['dataframe']
     points = df[[x, y]].dropna().values
     if len(points) < k:
         return jsonify({'error': 'Not enough points'}), 400
 
-    kmeans = KMeans(k=k, max_iters=100)
+    kmeans = KMeans(k=k, max_iters=100, init=init_method)
     kmeans.fit(points)
 
     uploaded_data['cluster_results'] = {
@@ -86,6 +89,7 @@ def run_clustering():
         'x': x,
         'y': y,
         'k': k,
+        'init': init_method,
         'history': serialize_history(kmeans.iteration_history_)
     }
 
@@ -113,7 +117,8 @@ def generate_plots():
     data = [{'x': p[0], 'y': p[1], 'cluster': r['labels'][i]} for i, p in enumerate(r['data'])]
 
     try:
-        k_vals, sse_vals = calculate_elbow_data(r['data'], max_k=min(10, len(r['data'])))
+        init_method = r.get('init', 'random')
+        k_vals, sse_vals = calculate_elbow_data(r['data'], max_k=min(10, len(r['data'])), init=init_method)
         elbow = {'k_values': k_vals, 'sse_values': sse_vals}
     except:
         elbow = {}

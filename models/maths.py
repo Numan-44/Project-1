@@ -3,9 +3,10 @@ import numpy as np
 class KMeans:
     """Simple K-Means clustering implementation (loop-based, with animation history)."""
 
-    def __init__(self, k=3, max_iters=100):
+    def __init__(self, k=3, max_iters=100, init='random'):
         self.k = k
         self.max_iters = max_iters
+        self.init = init  # 'random' or 'kmeans++'
         self.centroids_ = None
         self.labels_ = None
         self.inertia_ = None
@@ -16,17 +17,18 @@ class KMeans:
         X = np.array(X, dtype=float)
         n_samples = len(X)
 
-        # STEP 1: Initialize random centroids
-        random_indices = np.random.choice(n_samples, self.k, replace=False)
-        self.centroids_ = X[random_indices].copy()
+        # STEP 1: Initialize centroids based on method
+        if self.init == 'kmeans++':
+            self.centroids_ = self._init_kmeans_plus_plus(X)
+        else:  # random initialization
+            random_indices = np.random.choice(n_samples, self.k, replace=False)
+            self.centroids_ = X[random_indices].copy()
 
         # Save initial state for animation
         self.iteration_history_.append({
          "centroids": self.centroids_.copy(),
          "labels": self.labels_.copy() if self.labels_ is not None else []
         })
-
-
 
         # STEP 2: Repeat until centroids don't change or max_iters reached
         for _ in range(self.max_iters):
@@ -53,6 +55,49 @@ class KMeans:
         self.inertia_ = self._calculate_sse(X, labels)
 
         return self
+
+    def _init_kmeans_plus_plus(self, X):
+        """Initialize centroids using K-means++ algorithm."""
+        n_samples = len(X)
+        centroids = []
+        
+        # Choose first centroid randomly
+        first_idx = np.random.choice(n_samples)
+        centroids.append(X[first_idx].copy())
+        
+        # Choose remaining centroids
+        for _ in range(1, self.k):
+            # Calculate distances from each point to nearest centroid
+            distances = []
+            for point in X:
+                min_dist = float('inf')
+                for centroid in centroids:
+                    dist = np.linalg.norm(point - centroid) ** 2
+                    if dist < min_dist:
+                        min_dist = dist
+                distances.append(min_dist)
+            
+            # Convert to probabilities
+            distances = np.array(distances)
+            if distances.sum() == 0:
+                # All points are at existing centroids, choose randomly
+                remaining_indices = list(range(n_samples))
+                for centroid in centroids:
+                    for i, point in enumerate(X):
+                        if np.allclose(point, centroid):
+                            if i in remaining_indices:
+                                remaining_indices.remove(i)
+                if remaining_indices:
+                    next_idx = np.random.choice(remaining_indices)
+                else:
+                    next_idx = np.random.choice(n_samples)
+            else:
+                probabilities = distances / distances.sum()
+                next_idx = np.random.choice(n_samples, p=probabilities)
+            
+            centroids.append(X[next_idx].copy())
+        
+        return np.array(centroids)
 
     def _assign_clusters(self, X):
         """Assign each point to the nearest centroid."""
@@ -88,17 +133,15 @@ class KMeans:
         return sse
 
 
-def calculate_elbow_data(X, max_k=10):
+def calculate_elbow_data(X, max_k=10, init='random'):
     """Calculate SSE for different k values (Elbow Method)."""
     k_values = []
     sse_values = []
     for k in range(1, max_k + 1):
         if k > len(X):
             break
-        kmeans = KMeans(k=k)
+        kmeans = KMeans(k=k, init=init)
         kmeans.fit(X)
         k_values.append(k)
         sse_values.append(kmeans.inertia_)
     return k_values, sse_values
-
-

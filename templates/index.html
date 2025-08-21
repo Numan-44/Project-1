@@ -22,6 +22,11 @@
         <select id="yColumn" class="form-select mb-2"></select>
         <label>K (1–10):</label>
         <input type="number" id="kValue" class="form-control mb-2" value="3" min="1" max="10">
+        <label>Initialization:</label>
+        <select id="initMethod" class="form-select mb-2">
+            <option value="random">Random</option>
+            <option value="kmeans++">K-means++</option>
+        </select>
         <button class="btn btn-success" onclick="runClustering()">Run Clustering</button>
     </div>
 
@@ -78,11 +83,12 @@ async function runClustering() {
     let x = document.getElementById("xColumn").value;
     let y = document.getElementById("yColumn").value;
     let k = parseInt(document.getElementById("kValue").value);
+    let init = document.getElementById("initMethod").value;
 
     let res = await fetch("/cluster", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ x_column: x, y_column: y, k: k })
+        body: JSON.stringify({ x_column: x, y_column: y, k: k, init: init })
     });
     let data = await res.json();
 
