@@ -37,6 +37,17 @@
         <pre id="centroids"></pre>
         <p><strong>SSE:</strong> <span id="sse"></span></p>
 
+        <!-- Animation Controls -->
+        <div class="mb-3">
+            <h6>Animation Controls</h6>
+            <button id="playBtn" class="btn btn-primary me-2" onclick="playAnimation()">Play Animation</button>
+            <button id="pauseBtn" class="btn btn-warning me-2" onclick="pauseAnimation()" disabled>Pause</button>
+            <button id="resetBtn" class="btn btn-secondary me-2" onclick="resetAnimation()">Reset</button>
+            <label class="me-2">Speed:</label>
+            <input type="range" id="speedControl" min="500" max="3000" value="1500" class="form-range" style="width:150px; display:inline-block;">
+            <span class="ms-2">Step: <span id="currentStep">0</span> / <span id="totalSteps">0</span></span>
+        </div>
+
         <div>
             <h6>Cluster Plot</h6>
             <canvas id="clusterPlot"></canvas>
@@ -52,6 +63,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 let clusterChart, elbowChart;
+let animationHistory = [];
+let currentAnimationStep = 0;
+let animationTimer = null;
+let isAnimating = false;
 
 document.getElementById("uploadForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -96,6 +111,12 @@ async function runClustering() {
         document.getElementById("centroids").innerText = JSON.stringify(data.centroids, null, 2);
         document.getElementById("sse").innerText = data.sse;
 
+        // Store animation history
+        animationHistory = data.history;
+        document.getElementById("totalSteps").innerText = animationHistory.length;
+        document.getElementById("currentStep").innerText = "0";
+        currentAnimationStep = 0;
+
         // Now fetch plots
         let plotRes = await fetch("/plots");
         let plotData = await plotRes.json();
@@ -134,6 +155,116 @@ function showElbowPlot(kVals, sseVals) {
         data: {
             labels: kVals,
             datasets: [{ label: "SSE", data: sseVals, borderColor: "blue", fill: false }]
+        }
+    });
+}
+
+// Animation functions
+function playAnimation() {
+    if (animationHistory.length === 0) return;
+    
+    isAnimating = true;
+    document.getElementById("playBtn").disabled = true;
+    document.getElementById("pauseBtn").disabled = false;
+    
+    animationTimer = setInterval(() => {
+        showAnimationStep(currentAnimationStep);
+        currentAnimationStep++;
+        
+        if (currentAnimationStep >= animationHistory.length) {
+            pauseAnimation();
+            currentAnimationStep = animationHistory.length - 1;
+        }
+    }, 3500 - parseInt(document.getElementById("speedControl").value));
+}
+
+function pauseAnimation() {
+    isAnimating = false;
+    if (animationTimer) {
+        clearInterval(animationTimer);
+        animationTimer = null;
+    }
+    document.getElementById("playBtn").disabled = false;
+    document.getElementById("pauseBtn").disabled = true;
+}
+
+function resetAnimation() {
+    pauseAnimation();
+    currentAnimationStep = 0;
+    document.getElementById("currentStep").innerText = "0";
+    if (animationHistory.length > 0) {
+        showAnimationStep(0);
+    }
+}
+
+function showAnimationStep(step) {
+    if (step >= animationHistory.length || step < 0) return;
+    
+    document.getElementById("currentStep").innerText = step + 1;
+    
+    let historyStep = animationHistory[step];
+    let centroids = historyStep.centroids;
+    let labels = historyStep.labels;
+    
+    // Get original data points from the last clustering result
+    fetch("/plots").then(res => res.json()).then(plotData => {
+        if (plotData.points) {
+            // Create animated plot data
+            let animatedPoints = plotData.points.map((point, i) => ({
+                x: point.x,
+                y: point.y,
+                cluster: labels.length > i ? labels[i] : 0
+            }));
+            
+            showAnimatedClusterPlot(animatedPoints, centroids, step);
+        }
+    });
+}
+
+function showAnimatedClusterPlot(points, centroids, step) {
+    let ctx = document.getElementById("clusterPlot").getContext("2d");
+    if (clusterChart) clusterChart.destroy();
+    
+    let datasets = [];
+    let colors = ["red","blue","green","purple","orange","brown","pink","cyan","magenta","yellow"];
+    let grouped = {};
+    
+    points.forEach(p => {
+        if (!grouped[p.cluster]) grouped[p.cluster] = [];
+        grouped[p.cluster].push({x: p.x, y: p.y});
+    });
+    
+    Object.keys(grouped).forEach(c => {
+        datasets.push({ 
+            label: "Cluster " + c, 
+            data: grouped[c], 
+            pointRadius: 5, 
+            backgroundColor: colors[c % colors.length],
+            showLine: false
+        });
+    });
+    
+    // Add centroids with different styling for animation
+    datasets.push({ 
+        label: "Centroids", 
+        data: centroids.map(c => ({x: c[0], y: c[1]})), 
+        pointRadius: step === 0 ? 10 : 8,
+        backgroundColor: step === 0 ? "orange" : "black",
+        borderColor: "white",
+        borderWidth: 2,
+        showLine: false
+    });
+    
+    clusterChart = new Chart(ctx, { 
+        type: "scatter", 
+        data: { datasets },
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: step === 0 ? "Initial Centroids" : `Iteration ${step}`
+                }
+            }
         }
     });
 }
