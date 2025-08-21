@@ -1,10 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1 class="title">Clustering Results</h1>
+        <button id="backBtn" class="back-btn">← Back to Home</button>
+    </div>
+
+    <div class="results-grid">
+        <div class="result-card">
+            <h3>Cluster Visualization</h3>
+            <div id="clusterPlot" class="plot-container"></div>
+        </div>
+
+        <div class="result-card">
+            <h3>Elbow Method</h3>
+            <div id="elbowPlot" class="plot-container"></div>
+        </div>
+
+        <div class="result-card">
+            <h3>Statistics</h3>
+            <div id="statsContainer" class="stats-container"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

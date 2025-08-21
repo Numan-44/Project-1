@@ -96,14 +96,4 @@ def calculate_elbow_data(X, max_k=10):
     return k_values, sse_values
 
 
-# if __name__ == "__main__":
-#     data = np.array([
-#         [1, 2], [2, 1],
-#         [8, 9], [9, 8]
-#     ])
 
-#     kmeans = KMeans(k=2)
-#     kmeans.fit(data)
-#     print("Centroids:", kmeans.centroids_)
-#     print("Labels:", kmeans.labels_)
-#     print("SSE:", kmeans.inertia_)

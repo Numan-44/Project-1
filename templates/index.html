@@ -1,10 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1 class="title">K-Means Clustering Explorer</h1>
+        <div class="sparkles"></div>
+    </div>
+
+    <div class="upload-section">
+        <div class="upload-box" id="uploadBox">
+            <input type="file" id="csvFile" accept=".csv" style="display: none;">
+            <div class="upload-content">
+                <div class="upload-icon">📁</div>
+                <p>Click to upload CSV file</p>
+            </div>
+        </div>
+        <div id="uploadStatus" class="status-message"></div>
+    </div>
+
+    <div class="config-section" id="configSection" style="display: none;">
+        <div class="axis-selection">
+            <div class="input-group">
+                <label for="xAxis">X-Axis:</label>
+                <select id="xAxis"></select>
+            </div>
+            <div class="input-group">
+                <label for="yAxis">Y-Axis:</label>
+                <select id="yAxis"></select>
+            </div>
+        </div>
+
+        <div class="cluster-selection">
+            <label for="clusterCount">Number of Clusters:</label>
+            <input type="range" id="clusterCount" min="1" max="10" value="3">
+            <span id="clusterValue">3</span>
+        </div>
+
+        <button id="runClustering" class="cluster-btn">Run Clustering</button>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Running K-Means Clustering...</p>
+    </div>
+</div>
+{% endblock %}
