@@ -20,6 +20,32 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("uploadForm").addEventListener("submit", handleFileUpload);
 });
 
+// Helper function to draw crosses for centroids
+function drawCentroidCrosses(ctx, centroids, color) {
+    const scale = clusterChart.scales;
+    if (!scale.x || !scale.y) return;
+    
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    
+    centroids.forEach(centroid => {
+        const x = scale.x.getPixelForValue(centroid[0]);
+        const y = scale.y.getPixelForValue(centroid[1]);
+        const size = 8;
+        
+        // Draw a cross
+        ctx.beginPath();
+        ctx.moveTo(x - size, y);
+        ctx.lineTo(x + size, y);
+        ctx.moveTo(x, y - size);
+        ctx.lineTo(x, y + size);
+        ctx.stroke();
+    });
+    
+    ctx.restore();
+}
+
 // File upload handler
 async function handleFileUpload(e) {
     e.preventDefault();
@@ -69,7 +95,8 @@ async function runClustering() {
         let data = await res.json();
 
         if (res.ok) {
-            document.getElementById("centroids").innerText = JSON.stringify(data.centroids, null, 2);
+            const centroidsText = data.centroids.map(centroid => `${centroid[0].toFixed(4)}, ${centroid[1].toFixed(4)}`).join('\n');
+            document.getElementById("centroids").innerText = centroidsText;
             document.getElementById("sse").innerText = data.sse.toFixed(2);
             currentK = k;
             document.getElementById("currentK").innerText = currentK;
@@ -116,6 +143,7 @@ async function refreshPlots() {
 }
 
 // Display cluster plot
+// Display cluster plot
 function showClusterPlot(points, centroids) {
     let ctx = document.getElementById("clusterPlot").getContext("2d");
     if (clusterChart) clusterChart.destroy();
@@ -142,14 +170,12 @@ function showClusterPlot(points, centroids) {
         });
     });
     
-    // Add centroids
+    // Add centroids dataset (will be drawn as crosses)
     datasets.push({ 
         label: "Centroids", 
         data: centroids.map(c => ({x: c[0], y: c[1]})), 
-        pointRadius: 8, 
-        backgroundColor: "black",
-        borderColor: "white",
-        borderWidth: 2,
+        pointRadius: 0,  // Make points invisible (we'll draw crosses instead)
+        backgroundColor: "transparent",
         showLine: false
     });
     
@@ -176,9 +202,19 @@ function showClusterPlot(points, centroids) {
                     type: 'linear',
                     position: 'bottom'
                 }
+            },
+            animation: {
+                onComplete: function() {
+                    drawCentroidCrosses(ctx, centroids, "black");
+                }
             }
         }
     });
+    
+    // Draw crosses immediately if animation is disabled
+    if (!clusterChart.options.animation || !clusterChart.options.animation.duration) {
+        drawCentroidCrosses(ctx, centroids, "black");
+    }
     
     // Update cursor style
     document.getElementById("clusterPlot").style.cursor = editMode ? "crosshair" : "default";
@@ -599,14 +635,13 @@ function showAnimatedClusterPlot(points, centroids, step) {
         });
     });
     
-    // Add centroids with different styling for animation
+    // Add centroids dataset (will be drawn as crosses)
+    const centroidColor = step === 0 ? "orange" : "black";
     datasets.push({ 
         label: "Centroids", 
         data: centroids.map(c => ({x: c[0], y: c[1]})), 
-        pointRadius: step === 0 ? 10 : 8,
-        backgroundColor: step === 0 ? "orange" : "black",
-        borderColor: "white",
-        borderWidth: 2,
+        pointRadius: 0,  // Make points invisible (we'll draw crosses instead)
+        backgroundColor: "transparent",
         showLine: false
     });
     
@@ -619,7 +654,21 @@ function showAnimatedClusterPlot(points, centroids, step) {
                     display: true,
                     text: step === 0 ? "Initial Centroids" : `Iteration ${step}`
                 }
+            },
+            animation: {
+                onComplete: function() {
+                    drawCentroidCrosses(ctx, centroids, centroidColor);
+                }
             }
         }
     });
+    
+    // Draw crosses immediately if animation is disabled
+    if (!clusterChart.options.animation || !clusterChart.options.animation.duration) {
+        drawCentroidCrosses(ctx, centroids, centroidColor);
+    }
 }
+
+
+
+Chart.register(crossPlugin);

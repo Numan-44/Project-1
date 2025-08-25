@@ -87,14 +87,31 @@
             <span class="ms-2">Step: <span id="currentStep">0</span> / <span id="totalSteps">0</span></span>
         </div>
 
+        <!-- Improved vertical arrangement for plots -->
         <div class="row">
-            <div class="col-md-6">
-                <h6>Cluster Plot</h6>
-                <canvas id="clusterPlot" style="cursor: default;"></canvas>
+            <div class="col-12 mb-3">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Cluster Plot</h6>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="chart-container" style="position: relative; height: 350px;">
+                            <canvas id="clusterPlot"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6">
-                <h6>Elbow Method</h6>
-                <canvas id="elbowPlot"></canvas>
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Elbow Method</h6>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="chart-container" style="position: relative; height: 350px;">
+                            <canvas id="elbowPlot"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -149,4 +166,23 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- Our JavaScript -->
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+<style>
+.chart-container {
+    min-height: 300px;
+    max-height: 350px;
+}
+
+@media (max-height: 1080px) {
+    .chart-container {
+        height: 500px !important;
+    }
+}
+
+@media (max-height: 1080px) {
+    .chart-container {
+        height: 500px !important;
+    }
+}
+</style>
 {% endblock %}
