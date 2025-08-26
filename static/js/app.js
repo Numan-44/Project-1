@@ -557,17 +557,24 @@ function showAnimationStep(step) {
 }
 
 function showAnimatedClusterPlot(points, centroids, step) {
+    if (!clusterChart) {
+        // Initialize chart only once
+        initAnimationChart(points, centroids, step);
+    } else {
+        // Update existing chart data instead of recreating it
+        updateAnimationChart(points, centroids, step);
+    }
+}
+ 
+function initAnimationChart(points, centroids, step) {
     let ctx = document.getElementById("clusterPlot").getContext("2d");
-    if (clusterChart) clusterChart.destroy();
-    
+    // Create datasets for clusters
     let datasets = [];
     let grouped = {};
-    
     points.forEach(p => {
         if (!grouped[p.cluster]) grouped[p.cluster] = [];
         grouped[p.cluster].push({x: p.x, y: p.y});
     });
-    
     Object.keys(grouped).forEach(c => {
         datasets.push({ 
             label: "Cluster " + c, 
@@ -578,8 +585,7 @@ function showAnimatedClusterPlot(points, centroids, step) {
             order: 1
         });
     });
-    
-    // Add centroids with different styling for animation (higher z-index)
+    // Add centroids dataset
     datasets.push({ 
         label: "Centroids", 
         data: centroids.map(c => ({x: c[0], y: c[1]})), 
@@ -590,31 +596,21 @@ function showAnimatedClusterPlot(points, centroids, step) {
         showLine: false,
         order: 0
     });
-    
-    // Calculate fixed axis ranges from all data points
+    // Calculate fixed axis ranges
     let allX = points.map(p => p.x);
     let allY = points.map(p => p.y);
     let xMin = Math.min(...allX);
     let xMax = Math.max(...allX);
     let yMin = Math.min(...allY);
     let yMax = Math.max(...allY);
-    
-    // Add some padding (10% of range)
     let xPadding = (xMax - xMin) * 0.1;
     let yPadding = (yMax - yMin) * 0.1;
-    
     clusterChart = new Chart(ctx, { 
         type: "scatter", 
         data: { datasets },
         options: {
-            // Disable animations to prevent resizing
-            animation: false,
-            transitions: {
-                active: {
-                    animation: {
-                        duration: 0
-                    }
-                }
+            animation: {
+                duration: 0 // Disable animations for faster updates
             },
             plugins: {
                 title: {
@@ -771,4 +767,29 @@ function showClusterPlot(points, centroids) {
     plotData.renumberedPoints = renumberedPoints;
     plotData.clusterMapping = mapping;
     plotData.colorMapping = colorMapping;
+
+    
+}
+
+function updateAnimationChart(points, centroids, step) {
+    // Update points
+    let grouped = {};
+    points.forEach(p => {
+        if (!grouped[p.cluster]) grouped[p.cluster] = [];
+        grouped[p.cluster].push({x: p.x, y: p.y});
+    });
+    // Update cluster datasets
+    Object.keys(grouped).forEach((c, i) => {
+        if (i < clusterChart.data.datasets.length - 1) {
+            clusterChart.data.datasets[i].data = grouped[c];
+        }
+    });
+    // Update centroids
+    clusterChart.data.datasets[clusterChart.data.datasets.length - 1].data = 
+        centroids.map(c => ({x: c[0], y: c[1]}));
+    // Update title
+    clusterChart.options.plugins.title.text = step === 0 ? 
+        "Initial Centroids" : `Iteration ${step}`;
+    // Update the chart
+    clusterChart.update('none'); // 'none' prevents animations for faster updates
 }

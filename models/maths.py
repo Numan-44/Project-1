@@ -3,10 +3,11 @@ import numpy as np
 class KMeans:
     """Simple K-Means clustering implementation (loop-based, with animation history)."""
 
-    def __init__(self, k=3, max_iters=100, init='random'):
+    def __init__(self, k=3, max_iters=100, init='random',max_history=50):
         self.k = k
         self.max_iters = max_iters
         self.init = init  # 'random' or 'kmeans++'
+        self.max_history = max_history  # Maximum number of history steps to store
         self.centroids_ = None
         self.labels_ = None
         self.inertia_ = None
@@ -100,18 +101,13 @@ class KMeans:
         return np.array(centroids)
 
     def _assign_clusters(self, X):
-        """Assign each point to the nearest centroid."""
-        distances = []
-        for point in X:
-            point_distances = []
-            for centroid in self.centroids_:
-                distance = np.linalg.norm(point - centroid)
-                point_distances.append(distance)
-            distances.append(point_distances)
+        """Vectorized assignment of points to clusters."""
+        # Calculate distances from all points to all centroids at once
+        distances = np.sqrt(((X[:, np.newaxis] - self.centroids_)**2).sum(axis=2))
         return np.argmin(distances, axis=1)
 
     def _recalculate_centroids(self, X, labels):
-        """Recalculate centroids as the mean of points in each cluster."""
+        """Vectorized centroid recalculation."""
         new_centroids = []
         for k in range(self.k):
             cluster_points = X[labels == k]
@@ -121,7 +117,7 @@ class KMeans:
                 new_centroid = self.centroids_[k]  # keep old centroid if cluster empty
             new_centroids.append(new_centroid)
         return np.array(new_centroids)
-
+    
     def _calculate_sse(self, X, labels):
         """Calculate Sum of Squared Errors."""
         sse = 0

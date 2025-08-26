@@ -103,7 +103,7 @@ def run_clustering():
     if len(points) < k:
         return jsonify({'error': 'Not enough points'}), 400
 
-    kmeans = KMeans(k=k, max_iters=100, init=init_method)
+    kmeans = KMeans(k=k, max_iters=100, init=init_method, max_history=30)
     kmeans.fit(points)
 
     uploaded_data['cluster_results'] = {
