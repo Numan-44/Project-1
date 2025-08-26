@@ -12,7 +12,20 @@ let currentK = 3;
 let plotData = null;
 
 // Colors for clusters
-const clusterColors = ["red","blue","green","purple","orange","brown","pink","cyan","magenta","yellow"];
+// Colors for clusters with transparency
+const clusterColors = [
+    "rgba(255, 0, 0, 0.6)",     // red
+    "rgba(0, 0, 255, 0.6)",     // blue
+    "rgba(0, 128, 0, 0.6)",     // green
+    "rgba(128, 0, 128, 0.6)",   // purple
+    "rgba(255, 165, 0, 0.6)",   // orange
+    "rgba(165, 42, 42, 0.6)",   // brown
+    "rgba(255, 192, 203, 0.6)", // pink
+    "rgba(0, 255, 255, 0.6)",   // cyan
+    "rgba(255, 0, 255, 0.6)",   // magenta
+    "rgba(255, 255, 0, 0.6)"    // yellow
+];
+
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
