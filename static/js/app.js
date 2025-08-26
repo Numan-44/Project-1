@@ -116,75 +116,6 @@ async function refreshPlots() {
     }
 }
 
-// Display cluster plot
-function showClusterPlot(points, centroids) {
-    let ctx = document.getElementById("clusterPlot").getContext("2d");
-    if (clusterChart) clusterChart.destroy();
-    
-    let datasets = [];
-    let grouped = {};
-    
-    // Group points by cluster
-    points.forEach(p => {
-        if (!grouped[p.cluster]) grouped[p.cluster] = [];
-        grouped[p.cluster].push({x: p.x, y: p.y});
-    });
-    
-    // Create datasets for each cluster
-    Object.keys(grouped).forEach(c => {
-        datasets.push({ 
-            label: "Cluster " + c, 
-            data: grouped[c], 
-            pointRadius: editMode ? 8 : 5,
-            pointHoverRadius: editMode ? 10 : 7,
-            backgroundColor: clusterColors[c % clusterColors.length],
-            pointBorderWidth: editMode ? 2 : 0,
-            pointBorderColor: editMode ? '#000' : 'transparent'
-        });
-    });
-    
-    // Add centroids
-    datasets.push({ 
-        label: "Centroids", 
-        data: centroids.map(c => ({x: c[0], y: c[1]})), 
-        pointRadius: 8, 
-        backgroundColor: "black",
-        borderColor: "white",
-        borderWidth: 2,
-        showLine: false
-    });
-    
-    clusterChart = new Chart(ctx, { 
-        type: "scatter", 
-        data: { datasets },
-        options: {
-            onClick: editMode ? handleChartClick : null,
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            if (context.datasetIndex === datasets.length - 1) {
-                                return `Centroid ${context.dataIndex}: (${context.parsed.x.toFixed(2)}, ${context.parsed.y.toFixed(2)})`;
-                            } else {
-                                return `Point (${context.parsed.x.toFixed(2)}, ${context.parsed.y.toFixed(2)}) - Cluster ${context.datasetIndex}`;
-                            }
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    type: 'linear',
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-    
-    // Update cursor style
-    document.getElementById("clusterPlot").style.cursor = editMode ? "crosshair" : "default";
-}
-
 // Display elbow method plot
 function showElbowPlot(kVals, sseVals) {
     let ctx = document.getElementById("elbowPlot").getContext("2d");
@@ -645,4 +576,132 @@ function showAnimatedClusterPlot(points, centroids, step) {
             }
         }
     });
+}
+
+// Modify updateClusterButtons to use sequential numbering
+function updateClusterButtons() {
+    const buttonContainer = document.getElementById("clusterButtons");
+    buttonContainer.innerHTML = "";
+    
+    // Get unique clusters from renumbered data or current data
+    let uniqueClusters = new Set();
+    if (plotData && plotData.renumberedPoints) {
+        plotData.renumberedPoints.forEach(p => uniqueClusters.add(p.cluster));
+    } else if (plotData && plotData.points) {
+        plotData.points.forEach(p => uniqueClusters.add(p.cluster));
+    }
+    
+    uniqueClusters = Array.from(uniqueClusters).sort((a, b) => a - b);
+    
+    uniqueClusters.forEach(clusterId => {
+        const btn = document.createElement("button");
+        btn.className = `btn btn-outline-primary btn-sm me-1 mb-1 ${selectedTargetCluster === clusterId ? 'active' : ''}`;
+        btn.style.backgroundColor = selectedTargetCluster === clusterId ? clusterColors[clusterId % clusterColors.length] : 'transparent';
+        btn.style.borderColor = clusterColors[clusterId % clusterColors.length];
+        btn.style.color = selectedTargetCluster === clusterId ? 'white' : clusterColors[clusterId % clusterColors.length];
+        btn.textContent = `Cluster ${clusterId}`;
+        btn.onclick = () => selectTargetCluster(clusterId);
+        buttonContainer.appendChild(btn);
+    });
+}
+
+// Function to renumber clusters sequentially
+function renumberClusters(points) {
+    // Get unique cluster IDs and sort them
+    let uniqueClusters = [...new Set(points.map(p => p.cluster))].sort((a, b) => a - b);
+    
+    // Create mapping from old cluster ID to new sequential ID
+    let clusterMapping = {};
+    uniqueClusters.forEach((clusterId, index) => {
+        clusterMapping[clusterId] = index;
+    });
+    
+    // Apply the mapping to all points
+    return points.map(point => ({
+        ...point,
+        cluster: clusterMapping[point.cluster]
+    }));
+}
+
+function showClusterPlot(points, centroids) {
+    let ctx = document.getElementById("clusterPlot").getContext("2d");
+    if (clusterChart) clusterChart.destroy();
+    
+    // Renumber clusters sequentially
+    let renumberedPoints = renumberClusters(points);
+    
+    let datasets = [];
+    let grouped = {};
+    
+    // Group points by renumbered cluster
+    renumberedPoints.forEach(p => {
+        if (!grouped[p.cluster]) grouped[p.cluster] = [];
+        grouped[p.cluster].push({x: p.x, y: p.y});
+    });
+    
+    // Create datasets for each cluster (using sequential numbering)
+    Object.keys(grouped).forEach(c => {
+        datasets.push({ 
+            label: "Cluster " + c, 
+            data: grouped[c], 
+            pointRadius: editMode ? 8 : 5,
+            pointHoverRadius: editMode ? 10 : 7,
+            backgroundColor: clusterColors[c % clusterColors.length],
+            pointBorderWidth: editMode ? 2 : 0,
+            pointBorderColor: editMode ? '#000' : 'transparent'
+        });
+    });
+    
+    // Add centroids (only show centroids that correspond to existing clusters)
+    let validCentroids = [];
+    let uniqueClusterIds = [...new Set(renumberedPoints.map(p => p.cluster))].sort((a, b) => a - b);
+    
+    uniqueClusterIds.forEach(clusterId => {
+        if (centroids[clusterId]) {
+            validCentroids.push({x: centroids[clusterId][0], y: centroids[clusterId][1]});
+        }
+    });
+    
+    datasets.push({ 
+        label: "Centroids", 
+        data: validCentroids, 
+        pointRadius: 8, 
+        backgroundColor: "black",
+        borderColor: "white",
+        borderWidth: 2,
+        showLine: false
+    });
+    
+    clusterChart = new Chart(ctx, { 
+        type: "scatter", 
+        data: { datasets },
+        options: {
+            onClick: editMode ? handleChartClick : null,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            if (context.datasetIndex === datasets.length - 1) {
+                                return `Centroid ${context.dataIndex}: (${context.parsed.x.toFixed(2)}, ${context.parsed.y.toFixed(2)})`;
+                            } else {
+                                return `Point (${context.parsed.x.toFixed(2)}, ${context.parsed.y.toFixed(2)}) - Cluster ${context.datasetIndex}`;
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Update cursor style
+    document.getElementById("clusterPlot").style.cursor = editMode ? "crosshair" : "default";
+    
+    // Store renumbered points for other functions
+    plotData.renumberedPoints = renumberedPoints;
 }
