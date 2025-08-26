@@ -120,6 +120,19 @@ async function refreshPlots() {
             plotData = data;
             currentK = data.k || currentK;
             document.getElementById("currentK").innerText = currentK;
+            
+            // Validate selectedTargetCluster - reset if it no longer exists
+            let uniqueClusters = new Set();
+            if (data.points) {
+                data.points.forEach(p => uniqueClusters.add(p.cluster));
+            }
+            
+            if (!uniqueClusters.has(selectedTargetCluster)) {
+                // Reset to the first available cluster
+                const availableClusters = Array.from(uniqueClusters).sort((a, b) => a - b);
+                selectedTargetCluster = availableClusters.length > 0 ? availableClusters[0] : 0;
+            }
+            
             showClusterPlot(data.points, data.centroids);
             showElbowPlot(data.elbow.k_values, data.elbow.sse_values);
             updateClusterButtons();
@@ -175,13 +188,13 @@ function updateEditModeUI() {
     if (editMode) {
         editBtn.textContent = "Exit Edit Mode";
         editBtn.className = "btn btn-success";
-        editStatus.innerHTML = '<span class="badge bg-warning text-dark">✏️ Edit Mode Active</span>';
+        editStatus.innerHTML = '<span class="badge bg-warning text-dark">Edit Mode Active</span>';
         pointEditSection.style.display = "block";
         updateClusterButtons();
     } else {
         editBtn.textContent = "Enter Edit Mode";
         editBtn.className = "btn btn-warning";
-        editStatus.innerHTML = '<span class="badge bg-secondary">👁️ View Mode</span>';
+        editStatus.innerHTML = '<span class="badge bg-secondary">View Mode</span>';
         pointEditSection.style.display = "none";
     }
 }
@@ -190,7 +203,7 @@ function updateClusterButtons() {
     const buttonContainer = document.getElementById("clusterButtons");
     buttonContainer.innerHTML = "";
     
-    // Get unique clusters from current data
+    // Get unique clusters from current data (these are original cluster IDs)
     let uniqueClusters = new Set();
     if (plotData && plotData.points) {
         plotData.points.forEach(p => uniqueClusters.add(p.cluster));
@@ -198,16 +211,29 @@ function updateClusterButtons() {
     
     uniqueClusters = Array.from(uniqueClusters).sort((a, b) => a - b);
     
-    uniqueClusters.forEach(clusterId => {
+    // Create mapping to sequential display numbers
+    const clusterMapping = {};
+    uniqueClusters.forEach((originalId, index) => {
+        clusterMapping[originalId] = index;
+    });
+    
+    uniqueClusters.forEach((originalClusterId, index) => {
         const btn = document.createElement("button");
-        btn.className = `btn btn-outline-primary btn-sm me-1 mb-1 ${selectedTargetCluster === clusterId ? 'active' : ''}`;
-        btn.style.backgroundColor = selectedTargetCluster === clusterId ? clusterColors[clusterId % clusterColors.length] : 'transparent';
-        btn.style.borderColor = clusterColors[clusterId % clusterColors.length];
-        btn.style.color = selectedTargetCluster === clusterId ? 'white' : clusterColors[clusterId % clusterColors.length];
-        btn.textContent = `Cluster ${clusterId}`;
-        btn.onclick = () => selectTargetCluster(clusterId);
+        const displayId = index; // Sequential display ID (0, 1, 2, ...)
+        
+        btn.className = `btn btn-outline-primary btn-sm me-1 mb-1 ${selectedTargetCluster === originalClusterId ? 'active' : ''}`;
+        btn.style.backgroundColor = selectedTargetCluster === originalClusterId ? clusterColors[originalClusterId % clusterColors.length] : 'transparent';
+        btn.style.borderColor = clusterColors[originalClusterId % clusterColors.length];
+        btn.style.color = selectedTargetCluster === originalClusterId ? 'white' : clusterColors[originalClusterId % clusterColors.length];
+        btn.textContent = `Cluster ${displayId}`; // Display sequential number
+        btn.onclick = () => selectTargetCluster(originalClusterId); // But store original ID
         buttonContainer.appendChild(btn);
     });
+    
+    // Store the mapping for other functions
+    if (plotData) {
+        plotData.displayMapping = clusterMapping;
+    }
 }
 
 function selectTargetCluster(clusterId) {
@@ -287,9 +313,13 @@ function showMergeDialog() {
         plotData.points.forEach(p => uniqueClusters.add(p.cluster));
     }
     
-    Array.from(uniqueClusters).sort((a, b) => a - b).forEach(clusterId => {
-        cluster1Select.innerHTML += `<option value="${clusterId}">Cluster ${clusterId}</option>`;
-        cluster2Select.innerHTML += `<option value="${clusterId}">Cluster ${clusterId}</option>`;
+    const sortedClusters = Array.from(uniqueClusters).sort((a, b) => a - b);
+    
+    // Create display mapping for the dropdown
+    sortedClusters.forEach((originalClusterId, index) => {
+        const displayId = index; // Sequential display ID (0, 1, 2, ...)
+        cluster1Select.innerHTML += `<option value="${originalClusterId}">Cluster ${displayId}</option>`;
+        cluster2Select.innerHTML += `<option value="${originalClusterId}">Cluster ${displayId}</option>`;
     });
     
     modal.show();
@@ -347,8 +377,12 @@ function showSplitDialog() {
         plotData.points.forEach(p => uniqueClusters.add(p.cluster));
     }
     
-    Array.from(uniqueClusters).sort((a, b) => a - b).forEach(clusterId => {
-        splitSelect.innerHTML += `<option value="${clusterId}">Cluster ${clusterId}</option>`;
+    const sortedClusters = Array.from(uniqueClusters).sort((a, b) => a - b);
+    
+    // Create display mapping for the dropdown
+    sortedClusters.forEach((originalClusterId, index) => {
+        const displayId = index; // Sequential display ID (0, 1, 2, ...)
+        splitSelect.innerHTML += `<option value="${originalClusterId}">Cluster ${displayId}</option>`;
     });
     
     modal.show();
@@ -413,7 +447,7 @@ async function undoLastEdit() {
             // Show feedback
             const status = document.getElementById("editModeStatus");
             const originalHTML = status.innerHTML;
-            status.innerHTML = '<span class="badge bg-info">↶ Undone: ' + data.undone_action + '</span>';
+            status.innerHTML = '<span class="badge bg-info">Undone: ' + data.undone_action + '</span>';
             setTimeout(() => {
                 status.innerHTML = originalHTML;
             }, 2000);
@@ -448,7 +482,7 @@ async function resetAllEdits() {
             // Show feedback
             const status = document.getElementById("editModeStatus");
             const originalHTML = status.innerHTML;
-            status.innerHTML = '<span class="badge bg-success">🔄 All edits reset</span>';
+            status.innerHTML = '<span class="badge bg-success">All edits reset</span>';
             setTimeout(() => {
                 status.innerHTML = originalHTML;
             }, 2000);
@@ -603,48 +637,32 @@ function showAnimatedClusterPlot(points, centroids, step) {
         }
     });
 }
-// Modify updateClusterButtons to use sequential numbering
-function updateClusterButtons() {
-    const buttonContainer = document.getElementById("clusterButtons");
-    buttonContainer.innerHTML = "";
-    
-    // Get unique clusters from renumbered data or current data
-    let uniqueClusters = new Set();
-    if (plotData && plotData.renumberedPoints) {
-        plotData.renumberedPoints.forEach(p => uniqueClusters.add(p.cluster));
-    } else if (plotData && plotData.points) {
-        plotData.points.forEach(p => uniqueClusters.add(p.cluster));
-    }
-    
-    uniqueClusters = Array.from(uniqueClusters).sort((a, b) => a - b);
-    
-    uniqueClusters.forEach(clusterId => {
-        const btn = document.createElement("button");
-        btn.className = `btn btn-outline-primary btn-sm me-1 mb-1 ${selectedTargetCluster === clusterId ? 'active' : ''}`;
-        btn.style.backgroundColor = selectedTargetCluster === clusterId ? clusterColors[clusterId % clusterColors.length] : 'transparent';
-        btn.style.borderColor = clusterColors[clusterId % clusterColors.length];
-        btn.style.color = selectedTargetCluster === clusterId ? 'white' : clusterColors[clusterId % clusterColors.length];
-        btn.textContent = `Cluster ${clusterId}`;
-        btn.onclick = () => selectTargetCluster(clusterId);
-        buttonContainer.appendChild(btn);
-    });
-}
 
-// Function to renumber clusters sequentially
-function renumberClusters(points) {
+// Function to create cluster mapping with color preservation
+function createClusterMapping(points) {
     // Get unique cluster IDs and sort them
     let uniqueClusters = [...new Set(points.map(p => p.cluster))].sort((a, b) => a - b);
     
     // Create mapping from old cluster ID to new sequential ID
     let clusterMapping = {};
+    let colorMapping = {}; // Map new sequential ID to original color
+    
     uniqueClusters.forEach((clusterId, index) => {
         clusterMapping[clusterId] = index;
+        colorMapping[index] = clusterId; // Keep track of original cluster ID for color
     });
+    
+    return { mapping: clusterMapping, uniqueClusters, colorMapping };
+}
+
+// Function to renumber clusters sequentially
+function renumberClusters(points) {
+    const { mapping } = createClusterMapping(points);
     
     // Apply the mapping to all points
     return points.map(point => ({
         ...point,
-        cluster: clusterMapping[point.cluster]
+        cluster: mapping[point.cluster]
     }));
 }
 
@@ -652,8 +670,12 @@ function showClusterPlot(points, centroids) {
     let ctx = document.getElementById("clusterPlot").getContext("2d");
     if (clusterChart) clusterChart.destroy();
     
-    // Renumber clusters sequentially
-    let renumberedPoints = renumberClusters(points);
+    // Create cluster mapping and renumber points
+    const { mapping, uniqueClusters, colorMapping } = createClusterMapping(points);
+    let renumberedPoints = points.map(point => ({
+        ...point,
+        cluster: mapping[point.cluster]
+    }));
     
     let datasets = [];
     let grouped = {};
@@ -664,40 +686,56 @@ function showClusterPlot(points, centroids) {
         grouped[p.cluster].push({x: p.x, y: p.y});
     });
     
-    // Create datasets for each cluster (using sequential numbering)
+    // Create datasets for each cluster (using sequential numbering but original colors)
     Object.keys(grouped).forEach(c => {
+        const originalClusterId = colorMapping[c]; // Get original cluster ID for color
         datasets.push({ 
             label: "Cluster " + c, 
             data: grouped[c], 
             pointRadius: editMode ? 8 : 5,
             pointHoverRadius: editMode ? 10 : 7,
-            backgroundColor: clusterColors[c % clusterColors.length],
+            backgroundColor: clusterColors[originalClusterId % clusterColors.length], // Use original color
             pointBorderWidth: editMode ? 2 : 0,
             pointBorderColor: editMode ? '#000' : 'transparent',
-            order: 1  // Lower order value means higher z-index, but centroids have order: 0
+            order: 1
         });
     });
     
-    // Add centroids (only show centroids that correspond to existing clusters)
+    // Fix centroid display: map centroids based on actual cluster presence
     let validCentroids = [];
-    let uniqueClusterIds = [...new Set(renumberedPoints.map(p => p.cluster))].sort((a, b) => a - b);
     
-    uniqueClusterIds.forEach(clusterId => {
-        if (centroids[clusterId]) {
-            validCentroids.push({x: centroids[clusterId][0], y: centroids[clusterId][1]});
+    // For each sequential cluster ID (0, 1, 2, ...), find the corresponding original cluster ID
+    // and get its centroid
+    uniqueClusters.forEach((originalClusterId, sequentialIndex) => {
+        if (centroids[originalClusterId]) {
+            validCentroids.push({
+                x: centroids[originalClusterId][0], 
+                y: centroids[originalClusterId][1]
+            });
+        } else {
+            // If centroid doesn't exist for this cluster, calculate it from points
+            const clusterPoints = points.filter(p => p.cluster === originalClusterId);
+            if (clusterPoints.length > 0) {
+                const avgX = clusterPoints.reduce((sum, p) => sum + p.x, 0) / clusterPoints.length;
+                const avgY = clusterPoints.reduce((sum, p) => sum + p.y, 0) / clusterPoints.length;
+                validCentroids.push({ x: avgX, y: avgY });
+            }
         }
     });
     
-    datasets.push({ 
-        label: "Centroids", 
-        data: validCentroids, 
-        pointRadius: 10,  // Make centroids larger (same as animation initial step)
-        backgroundColor: "black",
-        borderColor: "white",
-        borderWidth: 2,
-        showLine: false,
-        order: 0  // This ensures centroids are drawn on top (same as animation)
-    });
+    // Add centroids dataset
+    if (validCentroids.length > 0) {
+        datasets.push({ 
+            label: "Centroids", 
+            data: validCentroids, 
+            pointRadius: 10,
+            backgroundColor: "black",
+            borderColor: "white",
+            borderWidth: 2,
+            showLine: false,
+            order: 0
+        });
+    }
     
     clusterChart = new Chart(ctx, { 
         type: "scatter", 
@@ -708,7 +746,7 @@ function showClusterPlot(points, centroids) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            if (context.datasetIndex === datasets.length - 1) {
+                            if (context.datasetIndex === datasets.length - 1 && validCentroids.length > 0) {
                                 return `Centroid ${context.dataIndex}: (${context.parsed.x.toFixed(2)}, ${context.parsed.y.toFixed(2)})`;
                             } else {
                                 return `Point (${context.parsed.x.toFixed(2)}, ${context.parsed.y.toFixed(2)}) - Cluster ${context.datasetIndex}`;
@@ -731,4 +769,6 @@ function showClusterPlot(points, centroids) {
     
     // Store renumbered points for other functions
     plotData.renumberedPoints = renumberedPoints;
+    plotData.clusterMapping = mapping;
+    plotData.colorMapping = colorMapping;
 }
