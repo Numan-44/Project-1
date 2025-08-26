@@ -509,8 +509,6 @@ function showAnimationStep(step) {
     });
 }
 
-// Replace the showAnimatedClusterPlot function in app.js with this version:
-
 function showAnimatedClusterPlot(points, centroids, step) {
     let ctx = document.getElementById("clusterPlot").getContext("2d");
     if (clusterChart) clusterChart.destroy();
@@ -530,7 +528,7 @@ function showAnimatedClusterPlot(points, centroids, step) {
             pointRadius: 5, 
             backgroundColor: clusterColors[c % clusterColors.length],
             showLine: false,
-            order: 1  // Lower order value means higher z-index, but centroids have order: 0
+            order: 1
         });
     });
     
@@ -543,22 +541,31 @@ function showAnimatedClusterPlot(points, centroids, step) {
         borderColor: "white",
         borderWidth: 2,
         showLine: false,
-        order: 0  // This ensures centroids are drawn on top
+        order: 0
     });
+    
+    // Calculate fixed axis ranges from all data points
+    let allX = points.map(p => p.x);
+    let allY = points.map(p => p.y);
+    let xMin = Math.min(...allX);
+    let xMax = Math.max(...allX);
+    let yMin = Math.min(...allY);
+    let yMax = Math.max(...allY);
+    
+    // Add some padding (10% of range)
+    let xPadding = (xMax - xMin) * 0.1;
+    let yPadding = (yMax - yMin) * 0.1;
     
     clusterChart = new Chart(ctx, { 
         type: "scatter", 
         data: { datasets },
         options: {
-            // Fast smooth animations for step transitions
-            animation: {
-                duration: 300,
-                easing: 'easeOutQuart'
-            },
+            // Disable animations to prevent resizing
+            animation: false,
             transitions: {
                 active: {
                     animation: {
-                        duration: 150
+                        duration: 0
                     }
                 }
             },
@@ -571,13 +578,18 @@ function showAnimatedClusterPlot(points, centroids, step) {
             scales: {
                 x: {
                     type: 'linear',
-                    position: 'bottom'
+                    position: 'bottom',
+                    min: xMin - xPadding,
+                    max: xMax + xPadding
+                },
+                y: {
+                    min: yMin - yPadding,
+                    max: yMax + yPadding
                 }
             }
         }
     });
 }
-
 // Modify updateClusterButtons to use sequential numbering
 function updateClusterButtons() {
     const buttonContainer = document.getElementById("clusterButtons");
@@ -648,7 +660,8 @@ function showClusterPlot(points, centroids) {
             pointHoverRadius: editMode ? 10 : 7,
             backgroundColor: clusterColors[c % clusterColors.length],
             pointBorderWidth: editMode ? 2 : 0,
-            pointBorderColor: editMode ? '#000' : 'transparent'
+            pointBorderColor: editMode ? '#000' : 'transparent',
+            order: 1  // Lower order value means higher z-index, but centroids have order: 0
         });
     });
     
@@ -665,11 +678,12 @@ function showClusterPlot(points, centroids) {
     datasets.push({ 
         label: "Centroids", 
         data: validCentroids, 
-        pointRadius: 8, 
+        pointRadius: 10,  // Make centroids larger (same as animation initial step)
         backgroundColor: "black",
         borderColor: "white",
         borderWidth: 2,
-        showLine: false
+        showLine: false,
+        order: 0  // This ensures centroids are drawn on top (same as animation)
     });
     
     clusterChart = new Chart(ctx, { 
