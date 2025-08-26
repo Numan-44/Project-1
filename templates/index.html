@@ -167,6 +167,8 @@
 <!-- Our JavaScript -->
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 
+<!-- Add this style section to the existing <style> tag in index.html or replace it entirely: -->
+
 <style>
 .chart-container {
     min-height: 300px;
@@ -179,10 +181,37 @@
     }
 }
 
-@media (max-height: 1080px) {
-    .chart-container {
-        height: 500px !important;
-    }
+/* Homepage color changes */
+body {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2416 50%, #1a1a1a 100%);
+    min-height: 100vh;
+}
+
+.container h2 {
+    color: #007bff !important;
+}
+
+.card:not(.card:has(.chart-container)) {
+    background-color: rgba(42, 42, 42, 0.9);
+    border: 1px solid #555;
+    color: #f8f9fa;
+}
+
+.card:not(.card:has(.chart-container)) .card-header {
+    background-color: rgba(52, 52, 52, 0.9) !important;
+    color: #f8f9fa !important;
+    border-bottom: 1px solid #555;
+}
+
+/* Keep plot cards with white background */
+.card:has(.chart-container) {
+    background-color: white;
+    color: #333;
+}
+
+.card:has(.chart-container) .card-header {
+    background-color: #f8f9fa !important;
+    color: #333 !important;
 }
 </style>
 {% endblock %}
