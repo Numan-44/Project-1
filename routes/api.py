@@ -48,16 +48,24 @@ def upload_file():
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
     file = request.files['file']
-    if file.filename == '' or not file.filename.lower().endswith('.csv'):
-        return jsonify({'error': 'Invalid file (must be CSV)'}), 400
-
+    
+    # Check file extension
     filename = secure_filename(file.filename)
+    file_ext = os.path.splitext(filename)[1].lower()
+    
+    if file.filename == '' or file_ext not in ['.csv', '.xlsx']:
+        return jsonify({'error': 'Invalid file (must be CSV or XLSX)'}), 400
+
     path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
     os.makedirs(current_app.config['UPLOAD_FOLDER'], exist_ok=True)
     file.save(path)
 
     try:
-        df = pd.read_csv(path)
+        # Read file based on extension
+        if file_ext == '.csv':
+            df = pd.read_csv(path)
+        else:  # .xlsx
+            df = pd.read_excel(path)
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
