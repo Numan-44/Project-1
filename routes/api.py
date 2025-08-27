@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import numpy as np
 from werkzeug.utils import secure_filename
-from models.maths import KMeans, ElbowAnalyzer
+from models.maths import KMeans, ElbowAnalyzer, ClusterCalculator
 import copy
 
 api_bp = Blueprint('api', __name__)
@@ -34,60 +34,6 @@ def serialize_history(history):
             )
         })
     return serialized
-
-
-def recalculate_centroids(points, labels, k):
-    """Recalculate centroids based on current point assignments.
-    
-    Args:
-        points: List of data points
-        labels: Current cluster assignments for each point
-        k: Number of clusters
-        
-    Returns:
-        List of recalculated centroid coordinates
-    """
-    centroids = []
-    for cluster_id in range(k):
-        cluster_points = [
-            points[i] 
-            for i in range(len(points)) 
-            if labels[i] == cluster_id
-        ]
-        if len(cluster_points) > 0:
-            centroid = [
-                np.mean([p[0] for p in cluster_points]),
-                np.mean([p[1] for p in cluster_points])
-            ]
-        else:
-            # Keep previous centroid if cluster is empty
-            if ('cluster_results' in uploaded_data 
-                    and len(uploaded_data['cluster_results']['centroids']) > cluster_id):
-                centroid = uploaded_data['cluster_results']['centroids'][cluster_id]
-            else:
-                centroid = [0, 0]  # Default fallback
-        centroids.append(centroid)
-    return centroids
-
-
-def calculate_sse(points, labels, centroids):
-    """Calculate Sum of Squared Errors.
-    
-    Args:
-        points: List of data points
-        labels: Cluster assignments for each point
-        centroids: Current centroid coordinates
-        
-    Returns:
-        Sum of squared errors value
-    """
-    sse = 0
-    for i, point in enumerate(points):
-        cluster_id = labels[i]
-        centroid = centroids[cluster_id]
-        sse += ((point[0] - centroid[0])**2 
-                + (point[1] - centroid[1])**2)
-    return sse
 
 
 @api_bp.route('/upload', methods=['POST'])
@@ -189,6 +135,9 @@ def run_clustering():
     kmeans = KMeans(k=k, max_iters=100, init=init_method, max_history=30)
     kmeans.fit(points)
 
+    # Store calculator instance for reuse
+    uploaded_data['calculator'] = ClusterCalculator(k, precision=6)
+
     uploaded_data['cluster_results'] = {
         'data': points.tolist(),
         'labels': kmeans.labels_.tolist(),
@@ -234,6 +183,11 @@ def edit_point():
         return jsonify({'error': 'Missing point_index or new_cluster'}), 400
     
     results = uploaded_data['cluster_results']
+    calculator = uploaded_data.get('calculator')
+    
+    if not calculator:
+        calculator = ClusterCalculator(results['k'], precision=6)
+        uploaded_data['calculator'] = calculator
     
     # Store current state for undo
     if 'edit_history' not in uploaded_data:
@@ -252,13 +206,21 @@ def edit_point():
     # Update the point's cluster
     results['labels'][point_index] = new_cluster
     
-    # Recalculate centroids and SSE
-    results['centroids'] = recalculate_centroids(
-        results['data'], results['labels'], results['k']
+    # Use ClusterCalculator for recalculation
+    points_array = np.array(results['data'])
+    labels_array = np.array(results['labels'])
+    centroids_array = np.array(results['centroids'])
+    
+    # Recalculate centroids and SSE using the calculator
+    new_centroids = calculator.recalculate_centroids(
+        points_array, labels_array, centroids_array
     )
-    results['sse'] = calculate_sse(
-        results['data'], results['labels'], results['centroids']
+    new_sse = calculator.calculate_sse(
+        points_array, labels_array, new_centroids
     )
+    
+    results['centroids'] = new_centroids.tolist()
+    results['sse'] = float(new_sse)
     
     return jsonify({
         'success': True,
@@ -289,6 +251,11 @@ def merge_clusters():
         return jsonify({'error': 'Invalid cluster selection for merge'}), 400
     
     results = uploaded_data['cluster_results']
+    calculator = uploaded_data.get('calculator')
+    
+    if not calculator:
+        calculator = ClusterCalculator(results['k'], precision=6)
+        uploaded_data['calculator'] = calculator
     
     # Store current state for undo
     if 'edit_history' not in uploaded_data:
@@ -308,13 +275,21 @@ def merge_clusters():
         if results['labels'][i] == cluster2:
             results['labels'][i] = cluster1
     
-    # Recalculate centroids and SSE
-    results['centroids'] = recalculate_centroids(
-        results['data'], results['labels'], results['k']
+    # Use ClusterCalculator for recalculation
+    points_array = np.array(results['data'])
+    labels_array = np.array(results['labels'])
+    centroids_array = np.array(results['centroids'])
+    
+    # Recalculate centroids and SSE using the calculator
+    new_centroids = calculator.recalculate_centroids(
+        points_array, labels_array, centroids_array
     )
-    results['sse'] = calculate_sse(
-        results['data'], results['labels'], results['centroids']
+    new_sse = calculator.calculate_sse(
+        points_array, labels_array, new_centroids
     )
+    
+    results['centroids'] = new_centroids.tolist()
+    results['sse'] = float(new_sse)
     
     return jsonify({
         'success': True,
@@ -343,6 +318,7 @@ def split_cluster():
         return jsonify({'error': 'No cluster specified for split'}), 400
     
     results = uploaded_data['cluster_results']
+    calculator = uploaded_data.get('calculator')
     
     # Get points in the cluster to split
     cluster_points = []
@@ -374,25 +350,35 @@ def split_cluster():
     max_cluster = max(results['labels'])
     new_cluster_id = max_cluster + 1
     
-    # Run k-means with k=2 on the cluster points
-    kmeans_split = KMeans(k=2, max_iters=100, init='random')
-    kmeans_split.fit(cluster_points)
+    # Run k-means with k=2 on the cluster points using the KMeans class
+    kmeans_split = KMeans(k=2, max_iters=100, init='random', precision=6)
+    kmeans_split.fit(np.array(cluster_points))
     
     # Assign half of the points to the new cluster
     for i, split_label in enumerate(kmeans_split.labels_):
         if split_label == 1:  # Assign second cluster to new ID
             results['labels'][cluster_indices[i]] = new_cluster_id
     
-    # Update k
+    # Update k and create new calculator
     results['k'] = new_cluster_id + 1
+    calculator = ClusterCalculator(results['k'], precision=6)
+    uploaded_data['calculator'] = calculator
     
-    # Recalculate centroids and SSE
-    results['centroids'] = recalculate_centroids(
-        results['data'], results['labels'], results['k']
+    # Use ClusterCalculator for recalculation
+    points_array = np.array(results['data'])
+    labels_array = np.array(results['labels'])
+    centroids_array = np.array(results['centroids'])
+    
+    # Recalculate centroids and SSE using the calculator
+    new_centroids = calculator.recalculate_centroids(
+        points_array, labels_array, centroids_array
     )
-    results['sse'] = calculate_sse(
-        results['data'], results['labels'], results['centroids']
+    new_sse = calculator.calculate_sse(
+        points_array, labels_array, new_centroids
     )
+    
+    results['centroids'] = new_centroids.tolist()
+    results['sse'] = float(new_sse)
     
     return jsonify({
         'success': True,
@@ -424,9 +410,10 @@ def undo_edit():
     results['centroids'] = last_edit['centroids']
     results['sse'] = last_edit['sse']
     
-    # Handle k changes from split operations
+    # Handle k changes from split operations and update calculator
     if last_edit['action'] == 'split_cluster':
         results['k'] = last_edit['k']
+        uploaded_data['calculator'] = ClusterCalculator(results['k'], precision=6)
     
     return jsonify({
         'success': True,
@@ -454,10 +441,22 @@ def reset_edits():
     results['labels'] = copy.deepcopy(results['original_labels'])
     results['centroids'] = copy.deepcopy(results['original_centroids'])
     
-    # Recalculate SSE
-    results['sse'] = calculate_sse(
-        results['data'], results['labels'], results['centroids']
-    )
+    # Get original k from the length of original centroids
+    original_k = len(results['original_centroids'])
+    results['k'] = original_k
+    
+    # Recreate calculator with original k
+    calculator = ClusterCalculator(original_k, precision=6)
+    uploaded_data['calculator'] = calculator
+    
+    # Recalculate SSE using the calculator
+    points_array = np.array(results['data'])
+    labels_array = np.array(results['labels'])
+    centroids_array = np.array(results['centroids'])
+    
+    results['sse'] = float(calculator.calculate_sse(
+        points_array, labels_array, centroids_array
+    ))
     
     # Clear edit history
     uploaded_data['edit_history'] = []
