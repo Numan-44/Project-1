@@ -11,7 +11,6 @@ let selectedTargetCluster = 0;
 let currentK = 3;
 let plotData = null;
 
-// Colors for clusters
 // Colors for clusters with transparency
 const clusterColors = [
     "rgba(255, 0, 0, 0.6)",     // red
@@ -26,6 +25,18 @@ const clusterColors = [
     "rgba(255, 255, 0, 0.6)"    // yellow
 ];
 
+// View switching functions
+function showResultsView() {
+    document.getElementById("configurationView").classList.add("d-none");
+    document.getElementById("resultsView").classList.remove("d-none");
+    document.getElementById("backButton").classList.remove("d-none");
+}
+
+function showConfigurationView() {
+    document.getElementById("resultsView").classList.add("d-none");
+    document.getElementById("configurationView").classList.remove("d-none");
+    document.getElementById("backButton").classList.add("d-none");
+}
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -48,6 +59,7 @@ async function handleFileUpload(e) {
 
         if (res.ok) {
             document.getElementById("uploadMsg").innerText = data.message;
+            document.getElementById("uploadMsg").classList.remove("d-none");
             let xSel = document.getElementById("xColumn");
             let ySel = document.getElementById("yColumn");
             xSel.innerHTML = ""; ySel.innerHTML = "";
@@ -56,8 +68,6 @@ async function handleFileUpload(e) {
                 ySel.innerHTML += `<option value="${col}">${col}</option>`;
             });
             document.getElementById("columnCard").style.display = "block";
-            // Hide results if previously shown
-            document.getElementById("resultsCard").style.display = "none";
         } else {
             alert(data.error);
         }
@@ -101,8 +111,8 @@ async function runClustering() {
             // Now fetch plots
             await refreshPlots();
             
-            document.getElementById("resultsCard").style.display = "block";
-            document.getElementById("editingControls").style.display = "block";
+            // Switch to results view
+            showResultsView();
         } else {
             alert(data.error);
         }
@@ -187,13 +197,13 @@ function updateEditModeUI() {
     
     if (editMode) {
         editBtn.textContent = "Exit Edit Mode";
-        editBtn.className = "btn btn-success";
+        editBtn.className = "btn btn-success btn-custom";
         editStatus.innerHTML = '<span class="badge bg-warning text-dark">Edit Mode Active</span>';
         pointEditSection.style.display = "block";
         updateClusterButtons();
     } else {
         editBtn.textContent = "Enter Edit Mode";
-        editBtn.className = "btn btn-warning";
+        editBtn.className = "btn btn-warning-custom btn-custom";
         editStatus.innerHTML = '<span class="badge bg-secondary">View Mode</span>';
         pointEditSection.style.display = "none";
     }
@@ -767,8 +777,6 @@ function showClusterPlot(points, centroids) {
     plotData.renumberedPoints = renumberedPoints;
     plotData.clusterMapping = mapping;
     plotData.colorMapping = colorMapping;
-
-    
 }
 
 function updateAnimationChart(points, centroids, step) {

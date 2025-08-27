@@ -210,6 +210,25 @@
             margin: 2rem 0;
         }
 
+        .back-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            border-radius: 50px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
         @media (max-width: 768px) {
             .main-header h1 {
                 font-size: 2rem;
@@ -224,10 +243,23 @@
                 min-width: auto;
                 padding: 0.4rem 1rem;
             }
+
+            .back-button {
+                position: relative;
+                top: auto;
+                right: auto;
+                width: 100%;
+                margin-bottom: 1rem;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Back Button (hidden initially) -->
+    <button id="backButton" class="back-button d-none" onclick="showConfigurationView()">
+        <i class="fas fa-arrow-left me-2"></i>Back to Configuration
+    </button>
+
     <!-- Main Header -->
     <div class="main-header">
         <div class="container text-center">
@@ -237,221 +269,226 @@
     </div>
 
     <div class="container">
-        <!-- File Upload Section -->
-        <div class="custom-card">
-            <div class="card-header-custom">
-                <h5><i class="fas fa-upload"></i>Upload Your Dataset</h5>
-            </div>
-            <div class="card-body p-4">
-                <form id="uploadForm">
-                    <div class="row align-items-end">
-                        <div class="col-md-8">
-                            <label class="form-label fw-bold">Select CSV File</label>
-                            <input type="file" id="fileInput" accept=".csv" class="form-control" required>
+        <!-- Configuration View -->
+        <div id="configurationView">
+            <!-- File Upload Section -->
+            <div class="custom-card">
+                <div class="card-header-custom">
+                    <h5><i class="fas fa-upload"></i>Upload Your Dataset</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form id="uploadForm">
+                        <div class="row align-items-end">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Select CSV File</label>
+                                <input type="file" id="fileInput" accept=".csv" class="form-control" required>
+                            </div>
+                            <div class="col-md-4 mt-3 mt-md-0">
+                                <button type="submit" class="btn btn-primary-custom btn-custom w-100">
+                                    <i class="fas fa-cloud-upload-alt me-2"></i>Upload
+                                </button>
+                            </div>
                         </div>
-                        <div class="col-md-4 mt-3 mt-md-0">
-                            <button type="submit" class="btn btn-primary-custom btn-custom w-100">
-                                <i class="fas fa-cloud-upload-alt me-2"></i>Upload
+                    </form>
+                    <div id="uploadMsg" class="mt-3 alert alert-success d-none"></div>
+                </div>
+            </div>
+
+            <!-- Configuration Section -->
+            <div class="custom-card" id="columnCard" style="display:none;">
+                <div class="card-header-custom">
+                    <h5><i class="fas fa-cogs"></i>Configure Clustering Parameters</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">X-Axis Column</label>
+                            <select id="xColumn" class="form-select"></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Y-Axis Column</label>
+                            <select id="yColumn" class="form-select"></select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Number of Clusters (K)</label>
+                            <input type="number" id="kValue" class="form-control" value="3" min="1" max="10">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Initialization Method</label>
+                            <select id="initMethod" class="form-select">
+                                <option value="random">Random</option>
+                                <option value="kmeans++">K-means++</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button class="btn btn-success-custom btn-custom w-100" onclick="runClustering()">
+                                <i class="fas fa-play me-2"></i>Run Clustering
                             </button>
                         </div>
                     </div>
-                </form>
-                <div id="uploadMsg" class="mt-3 alert alert-success d-none"></div>
-            </div>
-        </div>
-
-        <!-- Configuration Section -->
-        <div class="custom-card" id="columnCard" style="display:none;">
-            <div class="card-header-custom">
-                <h5><i class="fas fa-cogs"></i>Configure Clustering Parameters</h5>
-            </div>
-            <div class="card-body p-4">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">X-Axis Column</label>
-                        <select id="xColumn" class="form-select"></select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Y-Axis Column</label>
-                        <select id="yColumn" class="form-select"></select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Number of Clusters (K)</label>
-                        <input type="number" id="kValue" class="form-control" value="3" min="1" max="10">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Initialization Method</label>
-                        <select id="initMethod" class="form-select">
-                            <option value="random">Random</option>
-                            <option value="kmeans++">K-means++</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button class="btn btn-success-custom btn-custom w-100" onclick="runClustering()">
-                            <i class="fas fa-play me-2"></i>Run Clustering
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Results Section -->
-        <div id="resultsCard" class="custom-card" style="display:none;">
-            <div class="card-header-custom">
-                <h5><i class="fas fa-chart-line"></i>Clustering Results</h5>
-            </div>
-            <div class="card-body p-4">
-                <!-- Metrics Display -->
-                <div class="results-grid mb-4">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="metric-card">
-                                <div class="metric-value" id="currentK">3</div>
-                                <div class="metric-label">Active Clusters</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="metric-card">
-                                <div class="metric-value" id="sse">0.00</div>
-                                <div class="metric-label">Sum Squared Error</div>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Results View -->
+        <div id="resultsView" class="d-none">
+            <div class="custom-card">
+                <div class="card-header-custom">
+                    <h5><i class="fas fa-chart-line"></i>Clustering Results</h5>
                 </div>
-
-                <!-- Interactive Editing Section -->
-                <div class="custom-card" id="editingControls" style="display:none;">
-                    <div class="card-header-custom">
-                        <h5><i class="fas fa-edit"></i>Interactive Cluster Editing</h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <!-- Edit Mode Toggle -->
-                        <div class="row align-items-center mb-4">
+                <div class="card-body p-4">
+                    <!-- Metrics Display -->
+                    <div class="results-grid mb-4">
+                        <div class="row g-3">
                             <div class="col-md-6">
-                                <button id="editModeBtn" class="btn btn-warning-custom btn-custom" onclick="toggleEditMode()">
-                                    <i class="fas fa-pen me-2"></i>Enter Edit Mode
-                                </button>
-                            </div>
-                            <div class="col-md-6">
-                                <span id="editModeStatus" class="status-badge bg-secondary text-white">
-                                    <i class="fas fa-eye me-2"></i>View Mode
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Point Editing Section -->
-                        <div id="pointEditingSection" style="display:none;">
-                            <div class="section-divider"></div>
-                            
-                            <div class="mb-4">
-                                <label class="form-label fw-bold fs-5 mb-3">
-                                    <i class="fas fa-target me-2"></i>Select Target Cluster
-                                </label>
-                                <div id="clusterButtons" class="d-flex flex-wrap"></div>
-                            </div>
-
-                            <div class="section-divider"></div>
-
-                            <!-- Advanced Operations -->
-                            <div class="mb-4">
-                                <h6 class="fw-bold fs-5 mb-3">
-                                    <i class="fas fa-tools me-2"></i>Advanced Operations
-                                </h6>
-                                <div class="row g-2">
-                                    <div class="col-md-3">
-                                        <button class="btn btn-info-custom btn-custom w-100" onclick="showMergeDialog()">
-                                            <i class="fas fa-compress-alt me-2"></i>Merge
-                                        </button>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-success-custom btn-custom w-100" onclick="showSplitDialog()">
-                                            <i class="fas fa-expand-alt me-2"></i>Split
-                                        </button>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-secondary btn-custom w-100" onclick="undoLastEdit()">
-                                            <i class="fas fa-undo me-2"></i>Undo
-                                        </button>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-outline-danger btn-custom w-100" onclick="resetAllEdits()">
-                                            <i class="fas fa-refresh me-2"></i>Reset All
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Animation Controls -->
-                <div class="animation-controls">
-                    <h6 class="fw-bold fs-5 mb-3">
-                        <i class="fas fa-play-circle me-2"></i>Animation Controls
-                    </h6>
-                    <div class="row align-items-center g-3">
-                        <div class="col-md-4">
-                            <div class="d-flex gap-2">
-                                <button id="playBtn" class="btn btn-success btn-custom flex-fill" onclick="playAnimation()">
-                                    <i class="fas fa-play me-2"></i>Play
-                                </button>
-                                <button id="pauseBtn" class="btn btn-warning btn-custom flex-fill" onclick="pauseAnimation()" disabled>
-                                    <i class="fas fa-pause me-2"></i>Pause
-                                </button>
-                                <button id="resetBtn" class="btn btn-secondary btn-custom flex-fill" onclick="resetAnimation()">
-                                    <i class="fas fa-stop me-2"></i>Reset
-                                </button>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="speed-control">
-                                <label class="form-label fw-bold mb-2">Animation Speed</label>
-                                <input type="range" id="speedControl" min="500" max="3000" value="1500" class="form-range">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="text-center">
                                 <div class="metric-card">
-                                    <div class="fs-4 fw-bold text-primary">
-                                        Step: <span id="currentStep">0</span> / <span id="totalSteps">0</span>
+                                    <div class="metric-value" id="currentK">3</div>
+                                    <div class="metric-label">Active Clusters</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="metric-card">
+                                    <div class="metric-value" id="sse">0.00</div>
+                                    <div class="metric-label">Sum Squared Error</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Editing Section -->
+                    <div class="custom-card" id="editingControls">
+                        <div class="card-header-custom">
+                            <h5><i class="fas fa-edit"></i>Interactive Cluster Editing</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <!-- Edit Mode Toggle -->
+                            <div class="row align-items-center mb-4">
+                                <div class="col-md-6">
+                                    <button id="editModeBtn" class="btn btn-warning-custom btn-custom" onclick="toggleEditMode()">
+                                        <i class="fas fa-pen me-2"></i>Enter Edit Mode
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <span id="editModeStatus" class="status-badge bg-secondary text-white">
+                                        <i class="fas fa-eye me-2"></i>View Mode
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Point Editing Section -->
+                            <div id="pointEditingSection" style="display:none;">
+                                <div class="section-divider"></div>
+                                
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold fs-5 mb-3">
+                                        <i class="fas fa-target me-2"></i>Select Target Cluster
+                                    </label>
+                                    <div id="clusterButtons" class="d-flex flex-wrap"></div>
+                                </div>
+
+                                <div class="section-divider"></div>
+
+                                <!-- Advanced Operations -->
+                                <div class="mb-4">
+                                    <h6 class="fw-bold fs-5 mb-3">
+                                        <i class="fas fa-tools me-2"></i>Advanced Operations
+                                    </h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-3">
+                                            <button class="btn btn-info-custom btn-custom w-100" onclick="showMergeDialog()">
+                                                <i class="fas fa-compress-alt me-2"></i>Merge
+                                            </button>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="btn btn-success-custom btn-custom w-100" onclick="showSplitDialog()">
+                                                <i class="fas fa-expand-alt me-2"></i>Split
+                                            </button>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="btn btn-secondary btn-custom w-100" onclick="undoLastEdit()">
+                                                <i class="fas fa-undo me-2"></i>Undo
+                                            </button>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="btn btn-outline-danger btn-custom w-100" onclick="resetAllEdits()">
+                                                <i class="fas fa-refresh me-2"></i>Reset All
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Charts Section -->
-                <div class="row g-4">
-                    <div class="col-12">
-                        <div class="custom-card">
-                            <div class="card-header-custom">
-                                <h6><i class="fas fa-chart-scatter me-2"></i>Cluster Visualization</h6>
+                    <!-- Animation Controls -->
+                    <div class="animation-controls">
+                        <h6 class="fw-bold fs-5 mb-3">
+                            <i class="fas fa-play-circle me-2"></i>Animation Controls
+                        </h6>
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-4">
+                                <div class="d-flex gap-2">
+                                    <button id="playBtn" class="btn btn-success btn-custom flex-fill" onclick="playAnimation()">
+                                        <i class="fas fa-play me-2"></i>Play
+                                    </button>
+                                    <button id="pauseBtn" class="btn btn-warning btn-custom flex-fill" onclick="pauseAnimation()" disabled>
+                                        <i class="fas fa-pause me-2"></i>Pause
+                                    </button>
+                                    <button id="resetBtn" class="btn btn-secondary btn-custom flex-fill" onclick="resetAnimation()">
+                                        <i class="fas fa-stop me-2"></i>Reset
+                                    </button>
+                                </div>
                             </div>
-                            <div class="card-body p-3">
-                                <div class="chart-container">
-                                    <canvas id="clusterPlot"></canvas>
+                            <div class="col-md-4">
+                                <div class="speed-control">
+                                    <label class="form-label fw-bold mb-2">Animation Speed</label>
+                                    <input type="range" id="speedControl" min="500" max="3000" value="1500" class="form-range">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <div class="metric-card">
+                                        <div class="fs-4 fw-bold text-primary">
+                                            Step: <span id="currentStep">0</span> / <span id="totalSteps">0</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-12">
-                        <div class="custom-card">
-                            <div class="card-header-custom">
-                                <h6><i class="fas fa-chart-line me-2"></i>Elbow Method Analysis</h6>
+
+                    <!-- Charts Section -->
+                    <div class="row g-4">
+                        <div class="col-12">
+                            <div class="custom-card">
+                                <div class="card-header-custom">
+                                    <h6><i class="fas fa-chart-scatter me-2"></i>Cluster Visualization</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="chart-container">
+                                        <canvas id="clusterPlot"></canvas>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="card-body p-3">
-                                <div class="chart-container">
-                                    <canvas id="elbowPlot"></canvas>
+                        </div>
+                        <div class="col-12">
+                            <div class="custom-card">
+                                <div class="card-header-custom">
+                                    <h6><i class="fas fa-chart-line me-2"></i>Elbow Method Analysis</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="chart-container">
+                                        <canvas id="elbowPlot"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Hidden Centroids Display -->
-                <div style="display: none;">
-                    <pre id="centroids"></pre>
+                    <!-- Hidden Centroids Display -->
+                    <div style="display: none;">
+                        <pre id="centroids"></pre>
+                    </div>
                 </div>
             </div>
         </div>
@@ -513,7 +550,6 @@
             </div>
         </div>
     </div>
-
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
