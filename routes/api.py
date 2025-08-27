@@ -3,48 +3,102 @@ import os
 import pandas as pd
 import numpy as np
 from werkzeug.utils import secure_filename
-from models.maths import KMeans, calculate_elbow_data
+from models.maths import KMeans, ElbowAnalyzer
 import copy
 
 api_bp = Blueprint('api', __name__)
 uploaded_data = {}
 
+
 def serialize_history(history):
+    """Serialize iteration history for JSON response.
+    
+    Args:
+        history: List of iteration step dictionaries
+        
+    Returns:
+        List of serialized iteration steps with centroids and labels
+    """
     serialized = []
     for step in history:
         serialized.append({
-            'centroids': step['centroids'].tolist() if hasattr(step['centroids'], "tolist") else step['centroids'],
-            'labels': step['labels'].tolist() if hasattr(step['labels'], "tolist") else step['labels']
+            'centroids': (
+                step['centroids'].tolist() 
+                if hasattr(step['centroids'], "tolist") 
+                else step['centroids']
+            ),
+            'labels': (
+                step['labels'].tolist() 
+                if hasattr(step['labels'], "tolist") 
+                else step['labels']
+            )
         })
     return serialized
 
+
 def recalculate_centroids(points, labels, k):
-    """Recalculate centroids based on current point assignments"""
+    """Recalculate centroids based on current point assignments.
+    
+    Args:
+        points: List of data points
+        labels: Current cluster assignments for each point
+        k: Number of clusters
+        
+    Returns:
+        List of recalculated centroid coordinates
+    """
     centroids = []
     for cluster_id in range(k):
-        cluster_points = [points[i] for i in range(len(points)) if labels[i] == cluster_id]
+        cluster_points = [
+            points[i] 
+            for i in range(len(points)) 
+            if labels[i] == cluster_id
+        ]
         if len(cluster_points) > 0:
-            centroid = [np.mean([p[0] for p in cluster_points]), np.mean([p[1] for p in cluster_points])]
+            centroid = [
+                np.mean([p[0] for p in cluster_points]),
+                np.mean([p[1] for p in cluster_points])
+            ]
         else:
             # Keep previous centroid if cluster is empty
-            if 'cluster_results' in uploaded_data and len(uploaded_data['cluster_results']['centroids']) > cluster_id:
+            if ('cluster_results' in uploaded_data 
+                    and len(uploaded_data['cluster_results']['centroids']) > cluster_id):
                 centroid = uploaded_data['cluster_results']['centroids'][cluster_id]
             else:
                 centroid = [0, 0]  # Default fallback
         centroids.append(centroid)
     return centroids
 
+
 def calculate_sse(points, labels, centroids):
-    """Calculate Sum of Squared Errors"""
+    """Calculate Sum of Squared Errors.
+    
+    Args:
+        points: List of data points
+        labels: Cluster assignments for each point
+        centroids: Current centroid coordinates
+        
+    Returns:
+        Sum of squared errors value
+    """
     sse = 0
     for i, point in enumerate(points):
         cluster_id = labels[i]
         centroid = centroids[cluster_id]
-        sse += (point[0] - centroid[0])**2 + (point[1] - centroid[1])**2
+        sse += ((point[0] - centroid[0])**2 
+                + (point[1] - centroid[1])**2)
     return sse
+
 
 @api_bp.route('/upload', methods=['POST'])
 def upload_file():
+    """Handle file upload for clustering data.
+    
+    Supports CSV and XLSX files with at least 2 numeric columns.
+    
+    Returns:
+        JSON response with upload status and available columns
+    """
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
     file = request.files['file']
@@ -82,24 +136,45 @@ def upload_file():
     uploaded_data['valid_columns'] = valid_cols
     # Clear any previous editing state
     uploaded_data.pop('edit_history', None)
-    return jsonify({'message': 'File uploaded', 'columns': valid_cols}), 200
+    return jsonify({
+        'message': 'File uploaded', 
+        'columns': valid_cols
+    }), 200
+
 
 @api_bp.route('/columns', methods=['GET'])
 def get_columns():
+    """Get available numeric columns from uploaded file.
+    
+    Returns:
+        JSON response with list of valid numeric columns
+    """
     if 'valid_columns' not in uploaded_data:
         return jsonify({'error': 'No file uploaded'}), 400
     return jsonify({'columns': uploaded_data['valid_columns']}), 200
 
+
 @api_bp.route('/cluster', methods=['POST'])
 def run_clustering():
+    """Perform K-Means clustering on uploaded data.
+    
+    Expects JSON with x_column, y_column, k (clusters), and init method.
+    
+    Returns:
+        JSON response with clustering results including centroids, labels, and SSE
+    """
     if 'dataframe' not in uploaded_data:
         return jsonify({'error': 'No file uploaded'}), 400
 
     data = request.get_json()
-    x, y, k = data.get('x_column'), data.get('y_column'), data.get('k', 3)
+    x = data.get('x_column')
+    y = data.get('y_column')
+    k = data.get('k', 3)
     init_method = data.get('init', 'random')
 
-    if not x or not y or x not in uploaded_data['valid_columns'] or y not in uploaded_data['valid_columns']:
+    if (not x or not y 
+            or x not in uploaded_data['valid_columns'] 
+            or y not in uploaded_data['valid_columns']):
         return jsonify({'error': 'Invalid columns'}), 400
     if k < 1 or k > 10:
         return jsonify({'error': 'k must be between 1 and 10'}), 400
@@ -138,9 +213,16 @@ def run_clustering():
         'history': serialize_history(kmeans.iteration_history_)
     })
 
+
 @api_bp.route('/edit-point', methods=['POST'])
 def edit_point():
-    """Edit a single point's cluster assignment"""
+    """Edit a single point's cluster assignment.
+    
+    Expects JSON with point_index and new_cluster.
+    
+    Returns:
+        JSON response with updated clustering results
+    """
     if 'cluster_results' not in uploaded_data:
         return jsonify({'error': 'No clustering results'}), 400
     
@@ -171,8 +253,12 @@ def edit_point():
     results['labels'][point_index] = new_cluster
     
     # Recalculate centroids and SSE
-    results['centroids'] = recalculate_centroids(results['data'], results['labels'], results['k'])
-    results['sse'] = calculate_sse(results['data'], results['labels'], results['centroids'])
+    results['centroids'] = recalculate_centroids(
+        results['data'], results['labels'], results['k']
+    )
+    results['sse'] = calculate_sse(
+        results['data'], results['labels'], results['centroids']
+    )
     
     return jsonify({
         'success': True,
@@ -181,9 +267,16 @@ def edit_point():
         'sse': results['sse']
     })
 
+
 @api_bp.route('/merge-clusters', methods=['POST'])
 def merge_clusters():
-    """Merge two clusters into one"""
+    """Merge two clusters into one.
+    
+    Expects JSON with cluster1 and cluster2 to merge.
+    
+    Returns:
+        JSON response with updated clustering results after merge
+    """
     if 'cluster_results' not in uploaded_data:
         return jsonify({'error': 'No clustering results'}), 400
     
@@ -191,7 +284,8 @@ def merge_clusters():
     cluster1 = data.get('cluster1')
     cluster2 = data.get('cluster2')
     
-    if cluster1 is None or cluster2 is None or cluster1 == cluster2:
+    if (cluster1 is None or cluster2 is None 
+            or cluster1 == cluster2):
         return jsonify({'error': 'Invalid cluster selection for merge'}), 400
     
     results = uploaded_data['cluster_results']
@@ -215,8 +309,12 @@ def merge_clusters():
             results['labels'][i] = cluster1
     
     # Recalculate centroids and SSE
-    results['centroids'] = recalculate_centroids(results['data'], results['labels'], results['k'])
-    results['sse'] = calculate_sse(results['data'], results['labels'], results['centroids'])
+    results['centroids'] = recalculate_centroids(
+        results['data'], results['labels'], results['k']
+    )
+    results['sse'] = calculate_sse(
+        results['data'], results['labels'], results['centroids']
+    )
     
     return jsonify({
         'success': True,
@@ -225,9 +323,16 @@ def merge_clusters():
         'sse': results['sse']
     })
 
+
 @api_bp.route('/split-cluster', methods=['POST'])
 def split_cluster():
-    """Split a cluster into two using k-means on the cluster points"""
+    """Split a cluster into two using k-means on the cluster points.
+    
+    Expects JSON with cluster_to_split.
+    
+    Returns:
+        JSON response with updated clustering results after split
+    """
     if 'cluster_results' not in uploaded_data:
         return jsonify({'error': 'No clustering results'}), 400
     
@@ -248,7 +353,9 @@ def split_cluster():
             cluster_indices.append(i)
     
     if len(cluster_points) < 2:
-        return jsonify({'error': 'Cannot split cluster with less than 2 points'}), 400
+        return jsonify({
+            'error': 'Cannot split cluster with less than 2 points'
+        }), 400
     
     # Store current state for undo
     if 'edit_history' not in uploaded_data:
@@ -280,8 +387,12 @@ def split_cluster():
     results['k'] = new_cluster_id + 1
     
     # Recalculate centroids and SSE
-    results['centroids'] = recalculate_centroids(results['data'], results['labels'], results['k'])
-    results['sse'] = calculate_sse(results['data'], results['labels'], results['centroids'])
+    results['centroids'] = recalculate_centroids(
+        results['data'], results['labels'], results['k']
+    )
+    results['sse'] = calculate_sse(
+        results['data'], results['labels'], results['centroids']
+    )
     
     return jsonify({
         'success': True,
@@ -291,10 +402,16 @@ def split_cluster():
         'new_k': results['k']
     })
 
+
 @api_bp.route('/undo-edit', methods=['POST'])
 def undo_edit():
-    """Undo the last edit operation"""
-    if 'edit_history' not in uploaded_data or len(uploaded_data['edit_history']) == 0:
+    """Undo the last edit operation.
+    
+    Returns:
+        JSON response with restored clustering state
+    """
+    if ('edit_history' not in uploaded_data 
+            or len(uploaded_data['edit_history']) == 0):
         return jsonify({'error': 'No edits to undo'}), 400
     
     results = uploaded_data['cluster_results']
@@ -320,9 +437,14 @@ def undo_edit():
         'undone_action': last_edit['action']
     })
 
+
 @api_bp.route('/reset-edits', methods=['POST'])
 def reset_edits():
-    """Reset all manual edits and return to original clustering"""
+    """Reset all manual edits and return to original clustering.
+    
+    Returns:
+        JSON response with original clustering results
+    """
     if 'cluster_results' not in uploaded_data:
         return jsonify({'error': 'No clustering results'}), 400
     
@@ -333,7 +455,9 @@ def reset_edits():
     results['centroids'] = copy.deepcopy(results['original_centroids'])
     
     # Recalculate SSE
-    results['sse'] = calculate_sse(results['data'], results['labels'], results['centroids'])
+    results['sse'] = calculate_sse(
+        results['data'], results['labels'], results['centroids']
+    )
     
     # Clear edit history
     uploaded_data['edit_history'] = []
@@ -345,25 +469,47 @@ def reset_edits():
         'sse': results['sse']
     })
 
+
 @api_bp.route('/animation', methods=['GET'])
 def get_animation_steps():
-    """Return history steps for animation (iteration by iteration)."""
+    """Return history steps for animation (iteration by iteration).
+    
+    Returns:
+        JSON response with clustering iteration history
+    """
     if 'cluster_results' not in uploaded_data:
         return jsonify({'error': 'No clustering results'}), 400
-    return jsonify({'history': uploaded_data['cluster_results']['history']}), 200
+    return jsonify({
+        'history': uploaded_data['cluster_results']['history']
+    }), 200
+
 
 @api_bp.route('/plots', methods=['GET'])
 def generate_plots():
+    """Generate plot data for visualization.
+    
+    Returns:
+        JSON response with points, centroids, and elbow analysis data
+    """
     if 'cluster_results' not in uploaded_data:
         return jsonify({'error': 'No clustering results'}), 400
+    
     r = uploaded_data['cluster_results']
-    data = [{'x': p[0], 'y': p[1], 'cluster': r['labels'][i]} for i, p in enumerate(r['data'])]
+    data = [{
+        'x': p[0], 
+        'y': p[1], 
+        'cluster': r['labels'][i]
+    } for i, p in enumerate(r['data'])]
 
     try:
         init_method = r.get('init', 'random')
-        k_vals, sse_vals = calculate_elbow_data(r['data'], max_k=min(10, len(r['data'])), init=init_method)
+        k_vals, sse_vals = ElbowAnalyzer.calculate_elbow_data(
+            r['data'], 
+            max_k=min(10, len(r['data'])), 
+            init=init_method
+        )
         elbow = {'k_values': k_vals, 'sse_values': sse_vals}
-    except:
+    except Exception:
         elbow = {}
 
     return jsonify({
@@ -373,7 +519,13 @@ def generate_plots():
         'k': r.get('k', 3)
     }), 200
 
+
 @api_bp.route('/reset', methods=['POST'])
 def reset_data():
+    """Clear all uploaded data and clustering results.
+    
+    Returns:
+        JSON confirmation of reset operation
+    """
     uploaded_data.clear()
     return jsonify({'message': 'Reset done'}), 200
