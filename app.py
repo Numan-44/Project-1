@@ -11,4 +11,4 @@ app.register_blueprint(api_bp, url_prefix="/")
 app.register_blueprint(views_bp, url_prefix="/")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0',debug=True)
