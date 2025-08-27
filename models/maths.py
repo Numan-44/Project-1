@@ -33,41 +33,38 @@ class CentroidInitializer:
         Returns:
             Array of shape (k, n_features) containing initial centroids
         """
-        n_samples = len(X)
-        centroids = []
-        first_idx = np.random.choice(n_samples)
-        centroids.append(X[first_idx].copy())
-        
-        for _ in range(1, k):
-            distances = []
-            for point in X:
-                min_dist = float('inf')
-                for centroid in centroids:
-                    dist = np.linalg.norm(point - centroid) ** 2
-                    if dist < min_dist:
-                        min_dist = dist
-                distances.append(min_dist)
-            
-            distances = np.array(distances)
-            if distances.sum() == 0:
-                remaining_indices = list(range(n_samples))
-                for centroid in centroids:
-                    for i, point in enumerate(X):
-                        if np.allclose(point, centroid):
-                            if i in remaining_indices:
-                                remaining_indices.remove(i)
-                if remaining_indices:
-                    next_idx = np.random.choice(remaining_indices)
-                else:
-                    next_idx = np.random.choice(n_samples)
-            else:
-                probabilities = distances / distances.sum()
-                next_idx = np.random.choice(n_samples, p=probabilities)
-            
-            centroids.append(X[next_idx].copy())
-        
-        return np.array(centroids)
+        n_samples = X.shape[0]
+        centroids = np.empty((k, X.shape[1]), dtype=X.dtype)
 
+        # First centroid chosen randomly
+        first_idx = np.random.randint(n_samples)
+        centroids[0] = X[first_idx]
+
+        # Distances to nearest centroid
+        closest_dist_sq = np.linalg.norm(X - centroids[0], axis=1) ** 2
+
+        for i in range(1, k):
+            # Probabilities proportional to squared distances
+            total_dist_sq = closest_dist_sq.sum()
+            if total_dist_sq == 0:
+                # fallback: random choice among remaining
+                remaining_indices = np.setdiff1d(np.arange(n_samples), 
+                                                np.where((X[:, None] == centroids[:i]).all(-1))[0])
+                if len(remaining_indices) == 0:
+                    next_idx = np.random.randint(n_samples)
+                else:
+                    next_idx = np.random.choice(remaining_indices)
+            else:
+                probabilities = closest_dist_sq / total_dist_sq
+                next_idx = np.random.choice(n_samples, p=probabilities)
+
+            centroids[i] = X[next_idx]
+
+            # Update closest distances
+            new_dist_sq = np.linalg.norm(X - centroids[i], axis=1) ** 2
+            closest_dist_sq = np.minimum(closest_dist_sq, new_dist_sq)
+
+        return centroids
 
 class ClusterCalculator:
     """Helper class for cluster assignment and centroid recalculation."""
@@ -143,14 +140,11 @@ class ClusterCalculator:
         Returns:
             Sum of squared errors value rounded to specified precision
         """
-        sse = 0.0
-        for k in range(self.k):
-            cluster_points = X[labels == k]
-            if len(cluster_points) > 0:
-                centroid = centroids[k]
-                cluster_sse = np.sum((cluster_points - centroid) ** 2)
-                sse += np.round(cluster_sse, decimals=self.precision)
-        return sse
+        # Assign each point's centroid
+        diffs = X - centroids[labels]
+        sse = np.sum(diffs ** 2)
+        return np.round(sse, decimals=self.precision)
+
 
 
 class KMeans:
