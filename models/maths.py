@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Tuple, Optional, Union, Dict, Any
+from typing import List, Tuple
 
 
 class CentroidInitializer:
