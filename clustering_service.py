@@ -543,3 +543,15 @@ class ClusteringService:
             'data': {'message': 'Reset done'},
             'status': 200
         }
+    
+    def get_service_status(self):
+            """Get current status of the clustering service.""" 
+            return {
+                'data': {
+                    'has_uploaded_data': 'dataframe' in self.uploaded_data,
+                    'has_clustering_results': 'cluster_results' in self.uploaded_data,
+                    'edit_operations_count': len(self.uploaded_data.get('edit_history', [])),
+                    'available_columns': self.uploaded_data.get('valid_columns', [])
+                },
+                'status': 200
+            }
