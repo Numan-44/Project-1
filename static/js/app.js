@@ -762,11 +762,21 @@ function showClusterPlot(points, centroids) {
                 }
             },
             scales: {
-                x: {
-                    type: 'linear',
-                    position: 'bottom'
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: document.getElementById('xColumn').value
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: document.getElementById('yColumn').value
+                        }
+                    }
                 }
-            }
         }
     });
     
