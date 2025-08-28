@@ -9,8 +9,8 @@
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --card-shadow: 0 8px 25px rgba(0,0,0,0.1);
-            --card-hover-shadow: 0 12px 35px rgba(0,0,0,0.15);
+            --card-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            --card-hover-shadow: 0 6px 20px rgba(0,0,0,0.12);
         }
 
         body {
@@ -22,60 +22,62 @@
         .main-header {
             background: var(--primary-gradient);
             color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
+            padding: 1.5rem 0;
+            margin-bottom: 1.5rem;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .main-header h1 {
             font-weight: 600;
-            font-size: 2.5rem;
+            font-size: 2.2rem;
         }
 
         .main-header .subtitle {
-            font-size: 1.1rem;
+            font-size: 1rem;
             opacity: 0.9;
+            margin-top: 0.25rem;
         }
 
         .custom-card {
             background: white;
             border: none;
-            border-radius: 15px;
+            border-radius: 12px;
             box-shadow: var(--card-shadow);
             transition: all 0.3s ease;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
 
         .custom-card:hover {
             box-shadow: var(--card-hover-shadow);
-            transform: translateY(-2px);
+            transform: translateY(-1px);
         }
 
         .card-header-custom {
             background: var(--primary-gradient);
             color: white;
-            border-radius: 15px 15px 0 0 !important;
+            border-radius: 12px 12px 0 0 !important;
             border: none;
-            padding: 1.25rem 1.5rem;
+            padding: 0.75rem 1rem;
         }
 
-        .card-header-custom h5 {
+        .card-header-custom h5, .card-header-custom h6 {
             margin: 0;
             font-weight: 600;
             display: flex;
             align-items: center;
+            font-size: 1rem;
         }
 
         .card-header-custom i {
-            margin-right: 0.75rem;
-            font-size: 1.2rem;
+            margin-right: 0.5rem;
+            font-size: 1rem;
         }
 
         .form-control, .form-select {
-            border-radius: 10px;
+            border-radius: 8px;
             border: 2px solid #e3e6f0;
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
             transition: all 0.3s ease;
         }
 
@@ -85,13 +87,13 @@
         }
 
         .btn-custom {
-            border-radius: 25px;
-            padding: 0.75rem 2rem;
+            border-radius: 20px;
+            padding: 0.5rem 1.25rem;
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.9rem;
             transition: all 0.3s ease;
             border: none;
-            min-width: 120px;
+            min-width: 100px;
         }
 
         .btn-primary-custom {
@@ -100,8 +102,8 @@
         }
 
         .btn-primary-custom:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
 
         .btn-success-custom {
@@ -120,78 +122,263 @@
         }
 
         .cluster-btn {
-            border-radius: 20px;
-            padding: 0.5rem 1.25rem;
+            border-radius: 15px;
+            padding: 0.4rem 1rem;
             font-weight: 600;
-            margin: 0.25rem;
+            margin: 0.2rem;
             transition: all 0.3s ease;
             border: 2px solid;
-            min-width: 100px;
+            min-width: 80px;
+            font-size: 0.85rem;
         }
 
         .cluster-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
         }
 
         .status-badge {
-            font-size: 1rem;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 15px;
         }
 
         .chart-container {
             background: white;
-            border-radius: 15px;
-            padding: 1rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            min-height: 400px;
+            border-radius: 8px;
+            padding: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            min-height: 350px;
         }
 
-        .animation-controls {
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-        }
-
-        .speed-control {
+        .chart-container-large {
             background: white;
+            border-radius: 8px;
+            padding: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            min-height: 450px;
+        }
+
+        /* Compact Metrics Display */
+        .metrics-container {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             border-radius: 10px;
             padding: 1rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
         }
 
-        .results-grid {
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin: 1rem 0;
+        .metric-row {
+            display: flex;
+            gap: 1rem;
         }
 
         .metric-card {
             background: white;
-            border-radius: 10px;
-            padding: 1.25rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             text-align: center;
+            flex: 1;
         }
 
         .metric-value {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 700;
             color: #667eea;
+            margin-bottom: 0.25rem;
         }
 
         .metric-label {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: #666;
             text-transform: uppercase;
             font-weight: 600;
         }
 
+        /* Sidebar Styles */
+        .sidebar-card {
+            height: fit-content;
+            max-height: 100%;
+        }
+
+        .sidebar-card .card-body {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .metrics-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            height: fit-content;
+        }
+
+        .metric-card-sidebar {
+            background: white;
+            border-radius: 10px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            text-align: center;
+            border: 2px solid transparent;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .metric-card-sidebar .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-card-sidebar .metric-label {
+            font-size: 0.85rem;
+            color: #555;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .sidebar-heading {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: #333;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ccc, transparent);
+            margin: 1rem 0;
+        }
+
+        .sidebar-operations {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .btn-sidebar {
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-sidebar:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        #editingPlaceholder {
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #editingPlaceholder i {
+            opacity: 0.5;
+            color: #999;
+        }
+
+        #editingPlaceholder p {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* Compact Controls Toolbar */
+        .controls-toolbar {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .controls-section {
+            background: white;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 200px;
+        }
+
+        .speed-control label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        .step-display {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #667eea;
+            white-space: nowrap;
+        }
+
+        /* Compact Edit Mode Section */
+        .edit-mode-container {
+            margin-bottom: 1rem;
+        }
+
+        .edit-mode-header {
+            margin-bottom: 0.75rem;
+        }
+
+        .section-divider {
+            height: 2px;
+            background: var(--primary-gradient);
+            border-radius: 1px;
+            margin: 1rem 0;
+        }
+
+        .advanced-operations {
+            margin-top: 1rem;
+        }
+
+        .advanced-operations h6 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: #333;
+        }
+
+        .operations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.5rem;
+        }
+
         .modal-content {
-            border-radius: 15px;
+            border-radius: 12px;
             border: none;
             box-shadow: 0 15px 35px rgba(0,0,0,0.2);
         }
@@ -199,15 +386,9 @@
         .modal-header {
             background: var(--primary-gradient);
             color: white;
-            border-radius: 15px 15px 0 0;
+            border-radius: 12px 12px 0 0;
             border: none;
-        }
-
-        .section-divider {
-            height: 3px;
-            background: var(--primary-gradient);
-            border-radius: 2px;
-            margin: 2rem 0;
+            padding: 1rem 1.25rem;
         }
 
         .back-button {
@@ -215,13 +396,14 @@
             top: 20px;
             right: 20px;
             z-index: 1000;
-            border-radius: 50px;
-            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            padding: 0.6rem 1.25rem;
             font-weight: 600;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 0.9rem;
         }
 
         .back-button:hover {
@@ -231,17 +413,19 @@
 
         @media (max-width: 768px) {
             .main-header h1 {
-                font-size: 2rem;
+                font-size: 1.8rem;
             }
             
             .btn-custom {
                 min-width: auto;
-                padding: 0.6rem 1.5rem;
+                padding: 0.45rem 1rem;
+                font-size: 0.85rem;
             }
             
             .cluster-btn {
                 min-width: auto;
-                padding: 0.4rem 1rem;
+                padding: 0.35rem 0.8rem;
+                font-size: 0.8rem;
             }
 
             .back-button {
@@ -250,6 +434,43 @@
                 right: auto;
                 width: 100%;
                 margin-bottom: 1rem;
+            }
+
+            .controls-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                justify-content: center;
+            }
+
+            .metric-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .speed-control {
+                min-width: auto;
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .operations-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .sidebar-operations .btn-sidebar {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+            }
+
+            .metric-card-sidebar {
+                padding: 1rem;
+            }
+
+            .metric-card-sidebar .metric-value {
+                font-size: 1.6rem;
             }
         }
     </style>
@@ -276,7 +497,7 @@
                 <div class="card-header-custom">
                     <h5><i class="fas fa-upload"></i>Upload Your Dataset</h5>
                 </div>
-                <div class="card-body p-4">
+                <div class="card-body p-3">
                     <form id="uploadForm">
                         <div class="row align-items-end">
                             <div class="col-md-8">
@@ -299,7 +520,7 @@
                 <div class="card-header-custom">
                     <h5><i class="fas fa-cogs"></i>Configure Clustering Parameters</h5>
                 </div>
-                <div class="card-body p-4">
+                <div class="card-body p-3">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">X-Axis Column</label>
@@ -332,164 +553,158 @@
 
         <!-- Results View -->
         <div id="resultsView" class="d-none">
-            <div class="custom-card">
-                <div class="card-header-custom">
-                    <h5><i class="fas fa-chart-line"></i>Clustering Results</h5>
+            <!-- Compact Controls Toolbar -->
+            <div class="controls-toolbar">
+                <div class="controls-section">
+                    <div class="controls-row">
+                        <!-- Animation Controls -->
+                        <div class="control-group">
+                            <button id="playBtn" class="btn btn-success btn-custom" onclick="playAnimation()">
+                                <i class="fas fa-play me-1"></i>Play
+                            </button>
+                            <button id="pauseBtn" class="btn btn-warning btn-custom" onclick="pauseAnimation()" disabled>
+                                <i class="fas fa-pause me-1"></i>Pause
+                            </button>
+                            <button id="resetBtn" class="btn btn-secondary btn-custom" onclick="resetAnimation()">
+                                <i class="fas fa-stop me-1"></i>Reset
+                            </button>
+                        </div>
+
+                        <!-- Speed Control and Step Display -->
+                        <div class="control-group">
+                            <div class="speed-control">
+                                <label class="form-label">Speed</label>
+                                <input type="range" id="speedControl" min="500" max="3000" value="1500" class="form-range">
+                            </div>
+                            <div class="step-display">
+                                Step: <span id="currentStep">0</span> / <span id="totalSteps">0</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body p-4">
-                    <!-- Metrics Display -->
-                    <div class="results-grid mb-4">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="metric-card">
-                                    <div class="metric-value" id="currentK">3</div>
-                                    <div class="metric-label">Active Clusters</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="metric-card">
-                                    <div class="metric-value" id="sse">0.00</div>
-                                    <div class="metric-label">Sum Squared Error</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            </div>
 
-                    <!-- Interactive Editing Section -->
-                    <div class="custom-card" id="editingControls">
-                        <div class="card-header-custom">
-                            <h5><i class="fas fa-edit"></i>Interactive Cluster Editing</h5>
-                        </div>
-                        <div class="card-body p-4">
-                            <!-- Edit Mode Toggle -->
-                            <div class="row align-items-center mb-4">
-                                <div class="col-md-6">
-                                    <button id="editModeBtn" class="btn btn-warning-custom btn-custom" onclick="toggleEditMode()">
-                                        <i class="fas fa-pen me-2"></i>Enter Edit Mode
-                                    </button>
-                                </div>
-                                <div class="col-md-6">
-                                    <span id="editModeStatus" class="status-badge bg-secondary text-white">
-                                        <i class="fas fa-eye me-2"></i>View Mode
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Point Editing Section -->
-                            <div id="pointEditingSection" style="display:none;">
-                                <div class="section-divider"></div>
-                                
-                                <div class="mb-4">
-                                    <label class="form-label fw-bold fs-5 mb-3">
-                                        <i class="fas fa-target me-2"></i>Select Target Cluster
-                                    </label>
-                                    <div id="clusterButtons" class="d-flex flex-wrap"></div>
-                                </div>
-
-                                <div class="section-divider"></div>
-
-                                <!-- Advanced Operations -->
-                                <div class="mb-4">
-                                    <h6 class="fw-bold fs-5 mb-3">
-                                        <i class="fas fa-tools me-2"></i>Advanced Operations
-                                    </h6>
-                                    <div class="row g-2">
-                                        <div class="col-md-3">
-                                            <button class="btn btn-info-custom btn-custom w-100" onclick="showMergeDialog()">
-                                                <i class="fas fa-compress-alt me-2"></i>Merge
-                                            </button>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <button class="btn btn-success-custom btn-custom w-100" onclick="showSplitDialog()">
-                                                <i class="fas fa-expand-alt me-2"></i>Split
-                                            </button>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <button class="btn btn-secondary btn-custom w-100" onclick="undoLastEdit()">
-                                                <i class="fas fa-undo me-2"></i>Undo
-                                            </button>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <button class="btn btn-outline-danger btn-custom w-100" onclick="resetAllEdits()">
-                                                <i class="fas fa-refresh me-2"></i>Reset All
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Animation Controls -->
-                    <div class="animation-controls">
-                        <h6 class="fw-bold fs-5 mb-3">
-                            <i class="fas fa-play-circle me-2"></i>Animation Controls
-                        </h6>
-                        <div class="row align-items-center g-3">
-                            <div class="col-md-4">
-                                <div class="d-flex gap-2">
-                                    <button id="playBtn" class="btn btn-success btn-custom flex-fill" onclick="playAnimation()">
-                                        <i class="fas fa-play me-2"></i>Play
-                                    </button>
-                                    <button id="pauseBtn" class="btn btn-warning btn-custom flex-fill" onclick="pauseAnimation()" disabled>
-                                        <i class="fas fa-pause me-2"></i>Pause
-                                    </button>
-                                    <button id="resetBtn" class="btn btn-secondary btn-custom flex-fill" onclick="resetAnimation()">
-                                        <i class="fas fa-stop me-2"></i>Reset
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="speed-control">
-                                    <label class="form-label fw-bold mb-2">Animation Speed</label>
-                                    <input type="range" id="speedControl" min="500" max="3000" value="1500" class="form-range">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-center">
-                                    <div class="metric-card">
-                                        <div class="fs-4 fw-bold text-primary">
-                                            Step: <span id="currentStep">0</span> / <span id="totalSteps">0</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Charts Section -->
-                    <div class="row g-4">
-                        <div class="col-12">
+            <!-- Charts Section with Side Panels -->
+            <div class="row g-3">
+                <!-- Cluster Visualization with Interactive Editing -->
+                <div class="col-12">
+                    <div class="row g-3">
+                        <div class="col-lg-9">
                             <div class="custom-card">
                                 <div class="card-header-custom">
                                     <h6><i class="fas fa-chart-scatter me-2"></i>Cluster Visualization</h6>
                                 </div>
-                                <div class="card-body p-3">
-                                    <div class="chart-container">
+                                <div class="card-body p-2">
+                                    <div class="chart-container-large">
                                         <canvas id="clusterPlot"></canvas>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12">
-                            <div class="custom-card">
+                        <div class="col-lg-3">
+                            <!-- Interactive Editing Section -->
+                            <div class="custom-card sidebar-card" id="editingControls">
                                 <div class="card-header-custom">
-                                    <h6><i class="fas fa-chart-line me-2"></i>Elbow Method Analysis</h6>
+                                    <h6><i class="fas fa-edit"></i>Interactive Editing</h6>
                                 </div>
-                                <div class="card-body p-3">
-                                    <div class="chart-container">
-                                        <canvas id="elbowPlot"></canvas>
+                                <div class="card-body p-2">
+                                    <!-- Edit Mode Controls -->
+                                    <div class="edit-mode-header">
+                                        <div class="d-grid gap-2">
+                                            <button id="editModeBtn" class="btn btn-warning-custom btn-sidebar" onclick="toggleEditMode()">
+                                                <i class="fas fa-pen me-2"></i>Enter Edit Mode
+                                            </button>
+                                            <div class="text-center">
+                                                <span id="editModeStatus" class="badge bg-secondary fs-6 px-3 py-2">
+                                                    <i class="fas fa-eye me-2"></i>View Mode
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Point Editing Section -->
+                                    <div id="pointEditingSection" style="display:none;">
+                                        <div class="edit-mode-container">
+                                            <label class="form-label fw-bold mb-2 sidebar-label">
+                                                <i class="fas fa-target me-1"></i>Target Cluster
+                                            </label>
+                                            <div id="clusterButtons" class="d-flex flex-wrap mb-3"></div>
+                                        </div>
+
+                                        <div class="sidebar-divider"></div>
+
+                                        <!-- Advanced Operations -->
+                                        <div class="advanced-operations">
+                                            <h6 class="sidebar-heading">
+                                                <i class="fas fa-tools me-1"></i>Operations
+                                            </h6>
+                                            <div class="sidebar-operations">
+                                                <button class="btn btn-info-custom btn-sidebar w-100 mb-2" onclick="showMergeDialog()">
+                                                    <i class="fas fa-compress-alt me-1"></i>Merge
+                                                </button>
+                                                <button class="btn btn-success-custom btn-sidebar w-100 mb-2" onclick="showSplitDialog()">
+                                                    <i class="fas fa-expand-alt me-1"></i>Split
+                                                </button>
+                                                <button class="btn btn-secondary btn-sidebar w-100 mb-2" onclick="undoLastEdit()">
+                                                    <i class="fas fa-undo me-1"></i>Undo
+                                                </button>
+                                                <button class="btn btn-outline-danger btn-sidebar w-100" onclick="resetAllEdits()">
+                                                    <i class="fas fa-refresh me-1"></i>Reset
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="editingPlaceholder" class="text-center text-muted p-4">
+                                        <i class="fas fa-mouse-pointer fa-2x mb-2"></i>
+                                        <p class="mb-0">Click points on the chart to reassign clusters</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Hidden Centroids Display -->
-                    <div style="display: none;">
-                        <pre id="centroids"></pre>
+                </div>
+                
+                <!-- Elbow Method with Metrics -->
+                <div class="col-12">
+                    <div class="row g-3">
+                        <div class="col-lg-9">
+                            <div class="custom-card">
+                                <div class="card-header-custom">
+                                    <h6><i class="fas fa-chart-line me-2"></i>Elbow Method Analysis</h6>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div class="chart-container-large">
+                                        <canvas id="elbowPlot"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3">
+                            <!-- Compact Metrics Display -->
+                            <div class="custom-card sidebar-card">
+                                <div class="card-header-custom">
+                                    <h6><i class="fas fa-chart-bar me-2"></i>Clustering Metrics</h6>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div class="metrics-sidebar">
+                                        <div class="metric-card-sidebar">
+                                            <div class="metric-value" id="currentK">3</div>
+                                            <div class="metric-label">Active Clusters</div>
+                                        </div>
+                                        <div class="metric-card-sidebar">
+                                            <div class="metric-value" id="sse">0.00</div>
+                                            <div class="metric-label">Sum Squared Error</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Hidden Centroids Display -->
+            <div style="display: none;">
+                <pre id="centroids"></pre>
             </div>
         </div>
     </div>
